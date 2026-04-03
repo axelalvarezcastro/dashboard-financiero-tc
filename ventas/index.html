@@ -1,1 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ventas — Trichter Consulting 2026</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23090909'/><text y='22' x='4' font-size='18' font-weight='bold' fill='%23c59b3f'>TC</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #090909; --card: #111111; --border: #1f1d1a;
+      --accent: #c59b3f; --accent-dim: #c59b3f22;
+      --accent-light: #d4af5a; --accent-dark: #a07e2e;
+      --red: #e04545; --red-dim: #e0454522;
+      --green: #3dbb7d; --green-dim: #3dbb7d22;
+      --blue: #5a9fd4; --blue-dim: #5a9fd422;
+      --purple: #9b7fd4; --purple-dim: #9b7fd422;
+      --orange: #e08a45; --orange-dim: #e08a4522;
+      --text-1: #f2ece0; --text-2: #8a8070; --text-3: #5a5348;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text-1); font-family: 'Poppins', -apple-system, sans-serif; padding: 0 20px 60px; min-height: 100vh; }
 
+    /* Header */
+    .header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+    .logo-img { width: 48px; height: 48px; border-radius: 10px; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .title { font-size: 28px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--accent); }
+    .subtitle { font-size: 14px; color: var(--text-2); font-family: 'Poppins', sans-serif; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); color: var(--text-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+    .nav-link:hover, .nav-link.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .last-update { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; }
+    .refresh-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+    .refresh-btn:hover { background: var(--accent); color: var(--bg); }
+
+    /* Month Filter */
+    .month-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+    .month-btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-2); cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+    .month-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .month-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+
+    /* KPI Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 40px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; position: relative; overflow: hidden; transition: transform 0.2s; }
+    .kpi:hover { transform: translateY(-2px); }
+    .kpi-icon { position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.06; }
+    .kpi-label { font-size: 11px; color: var(--text-2); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+    .kpi-value { font-size: 34px; font-weight: 700; font-family: 'Poppins', sans-serif; line-height: 1.1; }
+    .kpi-sub { font-size: 13px; color: var(--text-3); margin-top: 8px; }
+    .kpi-trend { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; margin-right: 6px; }
+
+    /* Sections */
+    .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; margin-top: 40px; }
+    .section-title h2 { font-size: 20px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--text-1); white-space: nowrap; }
+    .section-title .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--accent-dark), transparent); margin-left: 12px; }
+
+    /* Charts & Cards */
+    .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+
+    /* Pipeline Funnel */
+    .funnel { padding: 20px 0; }
+    .funnel-step { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+    .funnel-bar-wrap { flex: 1; position: relative; }
+    .funnel-bar { height: 42px; border-radius: 8px; display: flex; align-items: center; padding-left: 16px; transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); position: relative; overflow: hidden; }
+    .funnel-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%); }
+    .funnel-label { font-size: 13px; font-weight: 600; color: var(--text-1); position: relative; z-index: 1; white-space: nowrap; }
+    .funnel-count { font-size: 14px; font-weight: 700; color: var(--text-1); font-family: 'JetBrains Mono', monospace; width: 50px; text-align: right; }
+    .funnel-pct { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; width: 50px; text-align: right; }
+
+    /* Conversion arrows */
+    .conv-arrow { display: flex; align-items: center; gap: 8px; margin: 4px 0 4px 40px; }
+    .conv-arrow-line { width: 2px; height: 16px; background: var(--border); }
+    .conv-rate { font-size: 11px; color: var(--accent); font-family: 'JetBrains Mono', monospace; background: var(--accent-dim); padding: 2px 8px; border-radius: 4px; }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: left; font-weight: 500; }
+    .data-table td { font-size: 14px; padding: 14px 16px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(197,155,63,0.03); }
+
+    /* Health indicators */
+    .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .health-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .health-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+    .health-value { font-size: 24px; font-weight: 700; font-family: 'Poppins', sans-serif; }
+    .health-desc { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+    /* Misc */
+    .tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .tag-green { background: var(--green-dim); color: var(--green); }
+    .tag-red { background: var(--red-dim); color: var(--red); }
+    .tag-blue { background: var(--blue-dim); color: var(--blue); }
+    .tag-accent { background: var(--accent-dim); color: var(--accent); }
+
+    .loading { text-align: center; padding: 60px; color: var(--text-2); }
+    .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); text-align: center; }
+    .footer p { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+
+    @media (max-width: 768px) {
+      .kpi-value { font-size: 26px; }
+      .title { font-size: 22px; }
+      .two-col { grid-template-columns: 1fr; }
+      .funnel-bar { height: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="loading">
+    <div class="loading-spinner"></div>
+    <p>Cargando datos de ventas...</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+const SPREADSHEET_ID = '1wI5pQfW_rGrwoH56DpdBaiIavHNSdNgwreOCIsJyTWs';
+const SHEET_NAME = 'VENTAS';
+const HEADER_ROW = 1;
+
+// Pipeline stages in order
+// Pipeline stages matching GHL: Lead > Agendo M1 > No Asistió > M2 > M3 Roadmap > Firma
+const PIPELINE_STAGES = [
+  { key: 'lead',    label: 'Leads (Nuevo + Contacto + SQL)', color: '#5a9fd4' },
+  { key: 'm1',      label: 'Agendó M1 Exploración',          color: '#9b7fd4' },
+  { key: 'm2',      label: 'M2 Demostración',                color: '#d4af5a' },
+  { key: 'm3',      label: 'M3 Roadmap',                     color: '#e08a45' },
+  { key: 'firma',   label: 'Firma de Contrato',              color: '#3dbb7d' }
+];
+
+// Month names
+const MONTH_ORDER = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ============================================================
+// DATA FETCHING (gviz JSON - same as financial dashboard)
+// ============================================================
+function parseGvizJSON(text) {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1) return [];
+  const jsonStr = text.substring(start, end + 1);
+  const data = JSON.parse(jsonStr);
+  if (!data.table || !data.table.cols || !data.table.rows) return [];
+  const headers = data.table.cols.map(c => (c.label || c.id || '').trim());
+  const rows = [];
+  data.table.rows.forEach(row => {
+    const obj = {};
+    row.c.forEach((cell, idx) => {
+      if (!headers[idx]) return;
+      if (cell === null) { obj[headers[idx]] = ''; return; }
+      const val = cell.v;
+      if (val === null || val === undefined) {
+        obj[headers[idx]] = cell.f || '';
+      } else if (typeof val === 'number') {
+        obj[headers[idx]] = val;
+      } else if (typeof val === 'string' && val.startsWith('Date(')) {
+        // Parse gviz date: Date(2026,0,15) → "2026-01-15"
+        const match = val.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (match) {
+          const d = new Date(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+          obj[headers[idx]] = d;
+          obj[headers[idx] + '_raw'] = val;
+        } else {
+          obj[headers[idx]] = String(val);
+        }
+      } else {
+        obj[headers[idx]] = String(val);
+      }
+    });
+    rows.push(obj);
+  });
+  return rows;
+}
+
+async function fetchGvizSheet(sheetName) {
+  const headerParam = HEADER_ROW > 1 ? '&headers=' + HEADER_ROW : '';
+  const url = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID +
+    '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetName) + headerParam;
+  const res = await fetch(url);
+  const text = await res.text();
+  return parseGvizJSON(text);
+}
+
+function parseMonto(v) {
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  let s = String(v).replace(/[$\s]/g, '');
+  // Handle "89.406" as 89406 (Spanish thousands separator)
+  if (/^\d{1,3}\.\d{3}$/.test(s)) return parseFloat(s.replace('.', ''));
+  // Handle "89.406,00" → 89406
+  if (s.includes(',') && s.includes('.')) {
+    if (s.indexOf('.') < s.indexOf(',')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (s.includes(',')) {
+    s = s.replace(',', '.');
+  }
+  return parseFloat(s) || 0;
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function pct(n, d) {
+  if (!d) return '0%';
+  return (n / d * 100).toFixed(1) + '%';
+}
+
+// ============================================================
+// PROCESS DATA
+// ============================================================
+function processData(rows, selectedMonth) {
+  // Filter by month if selected
+  let filtered = rows;
+  if (selectedMonth && selectedMonth !== 'Todos') {
+    filtered = rows.filter(r => (r.Mes || '').trim() === selectedMonth);
+  }
+
+  // Available months
+  const months = [];
+  rows.forEach(r => {
+    const m = (r.Mes || '').trim();
+    if (m && !months.includes(m)) months.push(m);
+  });
+  months.sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+
+  // Pipeline counts
+  const pipeline = {};
+  PIPELINE_STAGES.forEach(s => pipeline[s.key] = 0);
+
+  let totalCerrado = 0;
+  let totalCashCollected = 0;
+  let noAsistio = 0;
+
+  // Monthly trends
+  const monthlyData = {};
+
+  filtered.forEach(r => {
+    const etapa = (r.Etapa || r['Etapa Pipeline'] || '').trim().toLowerCase();
+    const mes = (r.Mes || '').trim();
+    const monto = parseMonto(r['Monto Cerrado'] || r['Monto'] || 0);
+    const cash = parseMonto(r['Cash Collected'] || 0);
+
+    // Count pipeline stages
+    // A lead that reached M1 also counts as a lead, etc. (cumulative)
+    // OR we count by current stage
+    const stageMap = {
+      // GHL actual stage names (uppercase from API)
+      'nuevo lead': 'lead',
+      'en contacto': 'lead',
+      'sql': 'lead',
+      'agendo m1 exploración': 'm1', 'agendo m1 exploracion': 'm1',
+      'agendo m1': 'm1', 'agendó m1': 'm1',
+      'no asistió': 'noshow', 'no asistio': 'noshow',
+      'm2 demostración': 'm2', 'm2 demostracion': 'm2', 'm2': 'm2',
+      'm3 roadmap': 'm3', 'm3': 'm3',
+      'firma de contrato': 'firma', 'firma': 'firma',
+      // Handle (PERDIDO) suffix
+      'lead': 'lead'
+    };
+
+    // Strip (PERDIDO) or (ABANDONADO) suffix for mapping
+    const etapaClean = etapa.replace(/\s*\(perdido\)/, '').replace(/\s*\(abandonado\)/, '').trim();
+
+    const stage = stageMap[etapaClean] || 'lead';
+
+    // Progressive pipeline counting (each stage includes all stages above)
+    pipeline.lead++;
+    if (['m1', 'm2', 'm3', 'firma', 'noshow'].includes(stage)) pipeline.m1++;
+    if (['m2', 'm3', 'firma'].includes(stage)) pipeline.m2++;
+    if (['m3', 'firma'].includes(stage)) pipeline.m3++;
+    if (stage === 'firma') {
+      pipeline.firma++;
+      totalCerrado += monto;
+      totalCashCollected += cash;
+    }
+    if (stage === 'noshow') {
+      noAsistio++;
+    }
+
+    // Monthly aggregation
+    if (mes) {
+      if (!monthlyData[mes]) {
+        monthlyData[mes] = { leads: 0, m1: 0, m2: 0, firma: 0, cerrado: 0, cash: 0, noshow: 0 };
+      }
+      monthlyData[mes].leads++;
+      if (['m1', 'm2', 'm3', 'firma', 'noshow'].includes(stage)) monthlyData[mes].m1++;
+      if (['m2', 'm3', 'firma'].includes(stage)) monthlyData[mes].m2++;
+      if (stage === 'firma') {
+        monthlyData[mes].firma++;
+        monthlyData[mes].cerrado += monto;
+        monthlyData[mes].cash += cash;
+      }
+      if (stage === 'noshow') monthlyData[mes].noshow++;
+    }
+  });
+
+  // Build monthly array sorted
+  const monthly = months.map(m => ({
+    mes: m,
+    ...( monthlyData[m] || { leads: 0, m1: 0, m2: 0, firma: 0, cerrado: 0, cash: 0, noshow: 0 })
+  }));
+
+  // Rates
+  // M1→M2 conversion (how many M1s advance to M2)
+  const tasaM1aM2 = pipeline.m1 > 0 ? (pipeline.m2 / pipeline.m1 * 100) : 0;
+  // M1→Firma (overall close rate from M1)
+  const tasaCierre = pipeline.m1 > 0 ? (pipeline.firma / pipeline.m1 * 100) : 0;
+  const tasaCierreGeneral = pipeline.lead > 0 ? (pipeline.firma / pipeline.lead * 100) : 0;
+
+  // Average deal size
+  const avgDeal = pipeline.firma > 0 ? totalCerrado / pipeline.firma : 0;
+
+  return {
+    pipeline,
+    totalCerrado,
+    totalCashCollected,
+    noAsistio,
+    tasaM1aM2,
+    tasaCierre,
+    tasaCierreGeneral,
+    avgDeal,
+    monthly,
+    months,
+    totalLeads: filtered.length
+  };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(data, selectedMonth) {
+  const app = document.getElementById('app');
+
+  // Header
+  let html = '<div class="header">';
+  html += '<div>';
+  html += '<div class="header-left"><img class="logo-img" src="logo.png" alt="TC" onerror="this.style.display=\'none\'"><div>';
+  html += '<div class="title">Ventas</div>';
+  html += '<div class="subtitle">Trichter Consulting — Pipeline & Performance 2026</div>';
+  html += '</div></div>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">';
+  html += '<span class="last-update" id="lastUpdate"></span>';
+  html += '<button class="refresh-btn" onclick="loadDashboard()">Actualizar</button>';
+  html += '</div>';
+  html += '</div>';
+
+  // Month filter
+  html += '<div class="month-filter">';
+  html += '<button class="month-btn' + (selectedMonth === 'Todos' ? ' active' : '') + '" onclick="filterMonth(\'Todos\')">Todos</button>';
+  data.months.forEach(m => {
+    html += '<button class="month-btn' + (selectedMonth === m ? ' active' : '') + '" onclick="filterMonth(\'' + m + '\')">' + m.substring(0, 3) + '</button>';
+  });
+  html += '</div>';
+
+  // KPI Grid
+  html += '<div class="kpi-grid">';
+
+  html += '<div class="kpi"><span class="kpi-icon">📞</span>';
+  html += '<div class="kpi-label">M1 Agendadas</div>';
+  html += '<div class="kpi-value" style="color:var(--purple)">' + data.pipeline.m1 + '</div>';
+  html += '<div class="kpi-sub">' + data.totalLeads + ' leads totales</div></div>';
+
+  html += '<div class="kpi"><span class="kpi-icon">🔄</span>';
+  html += '<div class="kpi-label">Avanzaron a M2</div>';
+  html += '<div class="kpi-value" style="color:var(--accent)">' + data.pipeline.m2 + '</div>';
+  html += '<div class="kpi-sub"><span class="tag tag-' + (data.tasaM1aM2 >= 50 ? 'green' : data.tasaM1aM2 >= 30 ? 'accent' : 'red') + '">' + data.tasaM1aM2.toFixed(1) + '% M1→M2</span></div></div>';
+
+  html += '<div class="kpi"><span class="kpi-icon">🤝</span>';
+  html += '<div class="kpi-label">Contratos Firmados</div>';
+  html += '<div class="kpi-value" style="color:var(--green)">' + data.pipeline.firma + '</div>';
+  html += '<div class="kpi-sub"><span class="tag tag-' + (data.tasaCierre >= 30 ? 'green' : data.tasaCierre >= 15 ? 'accent' : 'red') + '">' + data.tasaCierre.toFixed(1) + '% cierre</span></div></div>';
+
+  html += '<div class="kpi"><span class="kpi-icon">💰</span>';
+  html += '<div class="kpi-label">Monto Cerrado</div>';
+  html += '<div class="kpi-value" style="color:var(--green)">' + fmt(data.totalCerrado) + '</div>';
+  html += '<div class="kpi-sub">Ticket promedio: ' + fmt(data.avgDeal) + '</div></div>';
+
+  html += '<div class="kpi"><span class="kpi-icon">💵</span>';
+  html += '<div class="kpi-label">Cash Collected</div>';
+  html += '<div class="kpi-value" style="color:var(--accent-light)">' + fmt(data.totalCashCollected) + '</div>';
+  const collectRate = data.totalCerrado > 0 ? (data.totalCashCollected / data.totalCerrado * 100).toFixed(1) : 0;
+  html += '<div class="kpi-sub"><span class="tag tag-blue">' + collectRate + '% cobrado</span></div></div>';
+
+  html += '<div class="kpi"><span class="kpi-icon">❌</span>';
+  html += '<div class="kpi-label">No Asistieron</div>';
+  html += '<div class="kpi-value" style="color:var(--red)">' + data.noAsistio + '</div>';
+  const noShowRate = data.pipeline.m1 > 0 ? (data.noAsistio / data.pipeline.m1 * 100).toFixed(1) : 0;
+  html += '<div class="kpi-sub"><span class="tag tag-red">' + noShowRate + '% no-show</span></div></div>';
+
+  html += '</div>';
+
+  // Pipeline Funnel
+  html += '<div class="section-title"><span style="font-size:22px">🔻</span><h2>Pipeline de Ventas</h2><div class="line"></div></div>';
+  html += '<div class="chart-card"><div class="funnel">';
+
+  const maxCount = Math.max(...PIPELINE_STAGES.map(s => data.pipeline[s.key] || 0), 1);
+  let prevCount = null;
+
+  PIPELINE_STAGES.forEach((stage, i) => {
+    const count = data.pipeline[stage.key] || 0;
+    const widthPct = Math.max((count / maxCount) * 100, 8);
+
+    // Conversion arrow between stages
+    if (prevCount !== null && prevCount > 0) {
+      const convRate = (count / prevCount * 100).toFixed(1);
+      html += '<div class="conv-arrow"><div class="conv-arrow-line"></div><span class="conv-rate">↓ ' + convRate + '%</span></div>';
+    }
+
+    html += '<div class="funnel-step">';
+    html += '<div class="funnel-bar-wrap"><div class="funnel-bar" style="width:' + widthPct + '%;background:' + stage.color + '">';
+    html += '<span class="funnel-label">' + stage.label + '</span>';
+    html += '</div></div>';
+    html += '<div class="funnel-count">' + count + '</div>';
+    html += '<div class="funnel-pct">' + pct(count, data.pipeline.lead) + '</div>';
+    html += '</div>';
+
+    prevCount = count;
+  });
+
+  html += '</div></div>';
+
+  // Charts section
+  html += '<div class="section-title"><span style="font-size:22px">📈</span><h2>Tendencias Mensuales</h2><div class="line"></div></div>';
+  html += '<div class="two-col">';
+
+  // Meetings chart
+  html += '<div class="chart-card"><div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text-2)">Reuniones por Mes</div>';
+  html += '<canvas id="meetingsChart" height="220"></canvas></div>';
+
+  // Revenue chart
+  html += '<div class="chart-card"><div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text-2)">Revenue por Mes</div>';
+  html += '<canvas id="revenueChart" height="220"></canvas></div>';
+
+  html += '</div>';
+
+  // Conversion rates over time
+  html += '<div class="chart-card"><div style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text-2)">Tasas de Conversión por Mes</div>';
+  html += '<canvas id="conversionChart" height="180"></canvas></div>';
+
+  // Monthly table
+  html += '<div class="section-title"><span style="font-size:22px">📋</span><h2>Detalle Mensual</h2><div class="line"></div></div>';
+  html += '<div class="chart-card" style="overflow-x:auto"><table class="data-table">';
+  html += '<thead><tr><th>Mes</th><th>Leads</th><th>M1</th><th>No Show</th><th>M2</th><th>Firma</th><th>Cerrado</th><th>Cash</th><th>% M1→M2</th><th>% Cierre</th></tr></thead>';
+  html += '<tbody>';
+
+  let totals = { leads: 0, m1: 0, noshow: 0, m2: 0, firma: 0, cerrado: 0, cash: 0 };
+
+  data.monthly.forEach(m => {
+    const tM1M2 = m.m1 > 0 ? (m.m2 / m.m1 * 100).toFixed(1) + '%' : '—';
+    const tCierre = m.m1 > 0 ? (m.firma / m.m1 * 100).toFixed(1) + '%' : '—';
+    html += '<tr>';
+    html += '<td style="color:var(--text-1);font-weight:600;font-family:Poppins,sans-serif">' + m.mes + '</td>';
+    html += '<td>' + m.leads + '</td>';
+    html += '<td style="color:var(--purple)">' + m.m1 + '</td>';
+    html += '<td style="color:var(--red)">' + m.noshow + '</td>';
+    html += '<td style="color:var(--accent)">' + m.m2 + '</td>';
+    html += '<td style="color:var(--green)">' + m.firma + '</td>';
+    html += '<td style="color:var(--green)">' + fmt(m.cerrado) + '</td>';
+    html += '<td style="color:var(--accent-light)">' + fmt(m.cash) + '</td>';
+    html += '<td><span class="tag tag-' + (parseFloat(tM1M2) >= 50 ? 'green' : parseFloat(tM1M2) >= 30 ? 'accent' : 'red') + '">' + tM1M2 + '</span></td>';
+    html += '<td><span class="tag tag-' + (parseFloat(tCierre) >= 20 ? 'green' : parseFloat(tCierre) >= 10 ? 'accent' : 'red') + '">' + tCierre + '</span></td>';
+    html += '</tr>';
+
+    totals.leads += m.leads;
+    totals.m1 += m.m1;
+    totals.noshow += m.noshow;
+    totals.m2 += m.m2;
+    totals.firma += m.firma;
+    totals.cerrado += m.cerrado;
+    totals.cash += m.cash;
+  });
+
+  // Total row
+  const tTotM1M2 = totals.m1 > 0 ? (totals.m2 / totals.m1 * 100).toFixed(1) + '%' : '—';
+  const tTotCierre = totals.m1 > 0 ? (totals.firma / totals.m1 * 100).toFixed(1) + '%' : '—';
+  html += '<tr style="border-top:2px solid var(--accent);font-weight:700">';
+  html += '<td style="color:var(--accent);font-family:Poppins,sans-serif;font-weight:700">TOTAL</td>';
+  html += '<td style="color:var(--text-1)">' + totals.leads + '</td>';
+  html += '<td style="color:var(--purple)">' + totals.m1 + '</td>';
+  html += '<td style="color:var(--red)">' + totals.noshow + '</td>';
+  html += '<td style="color:var(--accent)">' + totals.m2 + '</td>';
+  html += '<td style="color:var(--green)">' + totals.firma + '</td>';
+  html += '<td style="color:var(--green)">' + fmt(totals.cerrado) + '</td>';
+  html += '<td style="color:var(--accent-light)">' + fmt(totals.cash) + '</td>';
+  html += '<td><span class="tag tag-accent">' + tTotM1M2 + '</span></td>';
+  html += '<td><span class="tag tag-accent">' + tTotCierre + '</span></td>';
+  html += '</tr>';
+
+  html += '</tbody></table></div>';
+
+  // Footer
+  html += '<div class="footer"><p>Trichter Consulting — Dashboard de Ventas 2026 · Datos desde Google Sheets (VENTAS)</p></div>';
+
+  app.innerHTML = html;
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-MX');
+
+  // Render charts
+  renderCharts(data);
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function renderCharts(data) {
+  const labels = data.monthly.map(m => m.mes.substring(0, 3));
+  const chartFont = { family: "'JetBrains Mono', monospace", size: 11 };
+  const gridColor = '#1f1d1a';
+  const tickColor = '#5a5348';
+
+  // Meetings chart
+  const meetingsCtx = document.getElementById('meetingsChart');
+  if (meetingsCtx) {
+    new Chart(meetingsCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'M1 Agendadas', data: data.monthly.map(m => m.m1), backgroundColor: '#9b7fd4', borderRadius: 6, barPercentage: 0.7 },
+          { label: 'M2', data: data.monthly.map(m => m.m2), backgroundColor: '#c59b3f', borderRadius: 6, barPercentage: 0.7 },
+          { label: 'Firma', data: data.monthly.map(m => m.firma), backgroundColor: '#3dbb7d', borderRadius: 6, barPercentage: 0.7 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: tickColor, font: chartFont, boxWidth: 12, padding: 16 } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont } },
+          y: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont } }
+        }
+      }
+    });
+  }
+
+  // Revenue chart
+  const revenueCtx = document.getElementById('revenueChart');
+  if (revenueCtx) {
+    new Chart(revenueCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Monto Cerrado', data: data.monthly.map(m => m.cerrado), backgroundColor: '#3dbb7d', borderRadius: 6, barPercentage: 0.6 },
+          { label: 'Cash Collected', data: data.monthly.map(m => m.cash), backgroundColor: '#c59b3f', borderRadius: 6, barPercentage: 0.6 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: tickColor, font: chartFont, boxWidth: 12, padding: 16 } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont } },
+          y: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont, callback: v => '$' + (v/1000).toFixed(0) + 'k' } }
+        }
+      }
+    });
+  }
+
+  // Conversion rates chart
+  const convCtx = document.getElementById('conversionChart');
+  if (convCtx) {
+    new Chart(convCtx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: '% M1 → M2',
+            data: data.monthly.map(m => m.m1 > 0 ? (m.m2 / m.m1 * 100) : null),
+            borderColor: '#c59b3f', backgroundColor: '#c59b3f22',
+            tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#c59b3f'
+          },
+          {
+            label: '% Cierre (sobre M1)',
+            data: data.monthly.map(m => m.m1 > 0 ? (m.firma / m.m1 * 100) : null),
+            borderColor: '#3dbb7d', backgroundColor: '#3dbb7d22',
+            tension: 0.3, fill: true, pointRadius: 5, pointBackgroundColor: '#3dbb7d'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: tickColor, font: chartFont, boxWidth: 12, padding: 16 } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont } },
+          y: { grid: { color: gridColor }, ticks: { color: tickColor, font: chartFont, callback: v => v + '%' }, min: 0, max: 100 }
+        }
+      }
+    });
+  }
+}
+
+// ============================================================
+// LOAD & FILTER
+// ============================================================
+let allRows = [];
+let currentMonth = 'Todos';
+
+function filterMonth(month) {
+  currentMonth = month;
+  const data = processData(allRows, month);
+  render(data, month);
+}
+
+async function loadDashboard() {
+  try {
+    allRows = await fetchGvizSheet(SHEET_NAME);
+    const data = processData(allRows, currentMonth);
+    render(data, currentMonth);
+  } catch (err) {
+    document.getElementById('app').innerHTML =
+      '<div class="loading" style="color:var(--red)">' +
+      '<p style="font-size:18px;margin-bottom:12px">Error cargando datos</p>' +
+      '<p style="font-size:13px;color:var(--text-3)">' + err.message + '</p>' +
+      '<p style="font-size:12px;color:var(--text-3);margin-top:12px">Verificá que existe la hoja "VENTAS" en el spreadsheet</p>' +
+      '</div>';
+    console.error(err);
+  }
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>
