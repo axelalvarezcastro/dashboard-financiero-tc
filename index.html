@@ -105,9 +105,11 @@ const MESES_ORDER = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','A
 const PEOPLE_ALIASES = {
   'eugenia': 'Eugenia',
   'euge':    'Eugenia',
+  'peronace':'Eugenia',
   'jesus':   'Jesus',
   'jesús':   'Jesus',
   'jesu':    'Jesus',
+  'leal':    'Jesus',
   'axel':    'Axel',
   'benjamin':'Benjamin',
   'benjamín':'Benjamin',
@@ -116,9 +118,16 @@ const PEOPLE_ALIASES = {
   'christian':'Cristian',
   'cris':    'Cristian',
   'quimey':  'Quimey',
+  'moreira': 'Quimey',
   'liliana': 'Liliana',
-  'lili':    'Liliana'
+  'lili':    'Liliana',
+  'daniel':  'Daniel'
 };
+
+// Columnas donde puede aparecer el nombre de la persona, en orden de prioridad.
+// En esta planilla lo más fiable es "Concepto" (ej: "Honorarios Eugenia"), después "Subcategoria"
+// (ej: "Pago nómina Axel"), después "Notas" y por último "Cliente".
+const PERSON_LOOKUP_COLS = ['Concepto','Subcategoría','Subcategoria','Notas','Nota','Notes','Descripción','Descripcion','Detalle','Observaciones','Observacion','Comentario','Comentarios','Cliente'];
 
 function stripAccents(str) {
   return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -145,6 +154,17 @@ function getField(row, candidates) {
     if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') return row[k];
   }
   return '';
+}
+
+// Recorre PERSON_LOOKUP_COLS y devuelve el primer match encontrado.
+function findPerson(row) {
+  for (const col of PERSON_LOOKUP_COLS) {
+    const val = row[col];
+    if (!val) continue;
+    const p = extractPerson(val);
+    if (p) return p;
+  }
+  return null;
 }
 
 function parseMonto(str) {
@@ -259,9 +279,6 @@ function processData(rows, forecast) {
     return false;
   }
 
-  // Columnas candidato donde puede aparecer el nombre de la persona
-  const NOTE_COLS = ['Notas','Nota','Notes','Concepto','Descripción','Descripcion','Detalle','Observaciones','Observacion','Comentario','Comentarios'];
-
   let totalIng = 0, totalGastosOp = 0, totalRetiros = 0, totalImpuestos = 0, totalNomina = 0, totalTx = rows.length;
   let totalRecurrente = 0, totalNuevo = 0;
 
@@ -294,9 +311,7 @@ function processData(rows, forecast) {
       if (cat === 'Retiro Socio') {
         monthMap[mes].retiros += monto;
         totalRetiros += monto;
-        // Identificar persona
-        const notes = getField(r, NOTE_COLS);
-        const person = extractPerson(notes) || extractPerson(r.Cliente) || 'Sin identificar';
+        const person = findPerson(r) || 'Sin identificar';
         if (!withdrawalPersonMonth[mes]) withdrawalPersonMonth[mes] = {};
         withdrawalPersonMonth[mes][person] = (withdrawalPersonMonth[mes][person] || 0) + monto;
         withdrawalPersonTotal[person] = (withdrawalPersonTotal[person] || 0) + monto;
@@ -311,8 +326,7 @@ function processData(rows, forecast) {
         if (catNorm === 'nomina' || catNorm === 'sueldos' || catNorm === 'honorarios') {
           monthMap[mes].nomina += monto;
           totalNomina += monto;
-          const notes = getField(r, NOTE_COLS);
-          const person = extractPerson(notes) || extractPerson(r.Cliente) || 'Sin identificar';
+          const person = findPerson(r) || 'Sin identificar';
           if (!payrollPersonMonth[mes]) payrollPersonMonth[mes] = {};
           payrollPersonMonth[mes][person] = (payrollPersonMonth[mes][person] || 0) + monto;
           payrollPersonTotal[person] = (payrollPersonTotal[person] || 0) + monto;
