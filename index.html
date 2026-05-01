@@ -12,6 +12,7 @@
       --bg: #090909; --card: #111111; --border: #1f1d1a;
       --accent: #c59b3f; --accent-dim: #c59b3f22;
       --accent-light: #d4af5a; --accent-dark: #a07e2e;
+      --gold: #c59b3f;
       --red: #e04545; --red-dim: #e0454522;
       --green: #3dbb7d; --green-dim: #3dbb7d22;
       --blue: #5a9fd4; --purple: #9b7fd4;
@@ -19,7 +20,6 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--text-1); font-family: 'Poppins', -apple-system, sans-serif; padding: 0 20px 60px; min-height: 100vh; }
-
     .header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
     .logo-img { width: 48px; height: 48px; border-radius: 10px; }
     .title { font-size: 28px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--accent); }
@@ -27,7 +27,6 @@
     .last-update { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; }
     .refresh-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
     .refresh-btn:hover { background: var(--accent); color: var(--bg); }
-
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 40px; }
     .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; position: relative; overflow: hidden; transition: transform 0.2s; }
     .kpi:hover { transform: translateY(-2px); }
@@ -36,20 +35,16 @@
     .kpi-value { font-size: 36px; font-weight: 700; font-family: 'Poppins', sans-serif; line-height: 1.1; }
     .kpi-sub { font-size: 13px; color: var(--text-3); margin-top: 8px; }
     .kpi-trend { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; margin-right: 6px; }
-
     .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; margin-top: 40px; }
     .section-title h2 { font-size: 20px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--text-1); }
-    .section-title .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); margin-left: 12px; }
-
+    .section-title .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--accent-dark), transparent); margin-left: 12px; }
     .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
     .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
-
     .cat-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
     .cat-dot { width: 10px; height: 10px; border-radius: 3px; margin-right: 10px; }
     .cat-name { font-size: 13px; color: var(--text-2); }
     .cat-value { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
     .cat-pct { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; width: 40px; text-align: right; margin-left: 12px; }
-
     .client-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
     .client-rank { font-size: 14px; font-weight: 700; color: var(--text-3); font-family: 'JetBrains Mono', monospace; width: 24px; }
     .client-info { flex: 1; }
@@ -58,21 +53,23 @@
     .client-total { font-size: 14px; font-weight: 600; color: var(--accent-light); font-family: 'JetBrains Mono', monospace; }
     .client-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
     .client-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
-
     .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
     .health-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
     .health-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
     .health-value { font-size: 24px; font-weight: 700; font-family: 'Poppins', sans-serif; }
     .health-desc { font-size: 12px; color: var(--text-3); margin-top: 4px; }
-
+    .person-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; }
+    .person-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+    .person-dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+    .person-info { flex: 1; min-width: 0; }
+    .person-name { font-size: 13px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .person-total { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-light); }
+    .person-pct { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
     .loading { text-align: center; padding: 60px; color: var(--text-2); }
     .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
-    .section-title .line { background: linear-gradient(90deg, var(--accent-dark), transparent); }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); text-align: center; }
     .footer p { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
-
     @media (max-width: 768px) {
       .kpi-value { font-size: 28px; }
       .title { font-size: 22px; }
@@ -81,14 +78,12 @@
   </style>
 </head>
 <body>
-
 <div id="app">
   <div class="loading">
     <div class="loading-spinner"></div>
     <p>Cargando datos de Google Sheets...</p>
   </div>
 </div>
-
 <script>
 // ============================================================
 // CONFIGURACIÓN - Cambiar estos valores
@@ -97,46 +92,86 @@ const SPREADSHEET_ID = '1wI5pQfW_rGrwoH56DpdBaiIavHNSdNgwreOCIsJyTWs';
 const SHEET_NAME = 'REGISTRO';
 const HEADER_ROW = 3; // Row where headers are (ID, Fecha, Mes, etc.)
 // ============================================================
-
 const COLORS = ['#c59b3f','#d4af5a','#a07e2e','#5a9fd4','#9b7fd4','#3dbb7d','#e0a56a','#7eb89e'];
+// Distinct palette for people (nómina/retiros)
+const PERSON_COLORS = ['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e0a56a','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a'];
 const MESES_ORDER = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ============================================================
+// REGISTRO DE PERSONAS
+// Para cada alias detectado en "Notas" mapeamos al nombre canónico.
+// Agregar más alias acá si aparecen en la planilla.
+// ============================================================
+const PEOPLE_ALIASES = {
+  'eugenia': 'Eugenia',
+  'euge':    'Eugenia',
+  'jesus':   'Jesus',
+  'jesús':   'Jesus',
+  'jesu':    'Jesus',
+  'axel':    'Axel',
+  'benjamin':'Benjamin',
+  'benjamín':'Benjamin',
+  'benja':   'Benjamin',
+  'cristian':'Cristian',
+  'christian':'Cristian',
+  'cris':    'Cristian',
+  'quimey':  'Quimey',
+  'liliana': 'Liliana',
+  'lili':    'Liliana'
+};
+
+function stripAccents(str) {
+  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Busca el nombre canónico en un texto (Notas / Concepto / etc.).
+// Devuelve null si no encuentra coincidencias.
+function extractPerson(text) {
+  if (!text) return null;
+  const lower = stripAccents(String(text).toLowerCase());
+  // Ordenar por longitud descendente para priorizar coincidencias largas (ej. "benjamin" antes que "benja")
+  const aliases = Object.keys(PEOPLE_ALIASES).sort((a,b) => b.length - a.length);
+  for (const alias of aliases) {
+    const aliasNorm = stripAccents(alias.toLowerCase());
+    const re = new RegExp('(^|[^a-z0-9])' + aliasNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-z0-9])', 'i');
+    if (re.test(lower)) return PEOPLE_ALIASES[alias];
+  }
+  return null;
+}
+
+// Lee la primera columna no vacía entre los nombres candidatos del row
+function getField(row, candidates) {
+  for (const k of candidates) {
+    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') return row[k];
+  }
+  return '';
+}
 
 function parseMonto(str) {
   if (!str && str !== 0) return 0;
   if (typeof str === 'number') return str; // Already a number (from JSON)
   // Remove currency text (MXN, USD, $) and spaces
   let cleaned = String(str).replace(/[A-Za-z$\s]/g, '');
-  // Detect Spanish format: 5.400,00 (dots=thousands, comma=decimal)
   if (cleaned.includes(',') && cleaned.includes('.')) {
-    // If last separator is comma → Spanish format (1.234,56)
     if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
       cleaned = cleaned.replace(/\./g, '').replace(',', '.');
     } else {
-      // English format (1,234.56)
       cleaned = cleaned.replace(/,/g, '');
     }
   } else if (cleaned.includes(',')) {
-    // Could be "5400,00" (decimal) or "5,400" (thousands)
     const parts = cleaned.split(',');
     if (parts[parts.length - 1].length === 2) {
-      cleaned = cleaned.replace(',', '.'); // decimal comma
+      cleaned = cleaned.replace(',', '.');
     } else {
-      cleaned = cleaned.replace(/,/g, ''); // thousands comma
+      cleaned = cleaned.replace(/,/g, '');
     }
   } else if (cleaned.includes('.')) {
-    // Only dots, no commas. Could be:
-    // "89.406" → Spanish thousands (89406) if 3 digits after dot
-    // "89.4"   → English decimal (89.4) if NOT 3 digits after dot
-    // "1.234.567" → multiple dots = thousands separators
     const dotParts = cleaned.split('.');
     if (dotParts.length > 2) {
-      // Multiple dots → all are thousands separators (e.g. "1.234.567")
       cleaned = cleaned.replace(/\./g, '');
     } else if (dotParts[1] && dotParts[1].length === 3 && parseFloat(cleaned) >= 1) {
-      // Single dot with exactly 3 digits after → thousands separator
       cleaned = cleaned.replace('.', '');
     }
-    // Otherwise it's a normal decimal point, leave as is
   }
   return parseFloat(cleaned) || 0;
 }
@@ -150,37 +185,30 @@ function fmt(n) {
 
 // Parse gviz JSON response → array of objects with header keys
 function parseGvizJSON(text) {
-  // gviz returns: google.visualization.Query.setResponse({...})
-  // Extract the JSON object between first { and last }
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end === -1) return [];
   const jsonStr = text.substring(start, end + 1);
   const data = JSON.parse(jsonStr);
-
   if (!data.table || !data.table.cols || !data.table.rows) return [];
-
   const headers = data.table.cols.map(c => (c.label || c.id || '').trim());
   const rows = [];
-
   data.table.rows.forEach(row => {
     const obj = {};
     row.c.forEach((cell, idx) => {
       if (!headers[idx]) return;
       if (cell === null) { obj[headers[idx]] = ''; return; }
-      // Use 'v' (raw value) for numbers, 'f' (formatted) or 'v' for strings
       const val = cell.v;
       if (val === null || val === undefined) {
         obj[headers[idx]] = cell.f || '';
       } else if (typeof val === 'number') {
-        obj[headers[idx]] = val; // Actual number - no parsing needed!
+        obj[headers[idx]] = val;
       } else {
         obj[headers[idx]] = String(val);
       }
     });
     rows.push(obj);
   });
-
   return rows;
 }
 
@@ -220,13 +248,9 @@ async function fetchForecastData() {
 
 function processData(rows, forecast) {
   forecast = forecast || {};
-  const data = { monthly: [], incomeByCategory: [], expenseByCategory: [], topClients: [], totals: {}, incomeByType: {} };
-
-  // Categories that are NOT operating expenses (distributions/financial items)
+  const data = { monthly: [], incomeByCategory: [], expenseByCategory: [], topClients: [], totals: {}, incomeByType: {}, payroll: {}, withdrawals: {} };
   const NON_OPERATING = ['Retiro Socio', 'Impuestos'];
 
-  // Recurring income: determined by Subcategoria = 'Mensualidad' OR Categoria = 'Software Recurrente'
-  // New income: Subcategoria = 'Set-up', 'Proyecto', or anything else
   function isRecurringIncome(row) {
     const subcat = (row['Subcategoría'] || row['Subcategoria'] || '').trim().toLowerCase();
     const cat = (row['Categoría'] || row['Categoria'] || '').trim();
@@ -235,17 +259,27 @@ function processData(rows, forecast) {
     return false;
   }
 
-  let totalIng = 0, totalGastosOp = 0, totalRetiros = 0, totalImpuestos = 0, totalTx = rows.length;
+  // Columnas candidato donde puede aparecer el nombre de la persona
+  const NOTE_COLS = ['Notas','Nota','Notes','Concepto','Descripción','Descripcion','Detalle','Observaciones','Observacion','Comentario','Comentarios'];
+
+  let totalIng = 0, totalGastosOp = 0, totalRetiros = 0, totalImpuestos = 0, totalNomina = 0, totalTx = rows.length;
   let totalRecurrente = 0, totalNuevo = 0;
+
+  // Estructuras para nómina y retiros por persona
+  const payrollPersonMonth = {};      // { mes: { persona: monto } }
+  const withdrawalPersonMonth = {};   // { mes: { persona: monto } }
+  const payrollPersonTotal = {};      // { persona: total }
+  const withdrawalPersonTotal = {};   // { persona: total }
 
   // Monthly aggregation
   const monthMap = {};
   rows.forEach(r => {
     const mes = r.Mes;
     if (!mes) return;
-    if (!monthMap[mes]) monthMap[mes] = { ingresos: 0, gastosOp: 0, retiros: 0, impuestos: 0, recurrente: 0, nuevo: 0 };
+    if (!monthMap[mes]) monthMap[mes] = { ingresos: 0, gastosOp: 0, retiros: 0, impuestos: 0, nomina: 0, recurrente: 0, nuevo: 0 };
     const monto = parseMonto(r['Monto MXN']);
     const cat = r['Categoría'] || r['Categoria'] || 'Otro';
+
     if (r.Tipo === 'Ingreso') {
       monthMap[mes].ingresos += monto;
       totalIng += monto;
@@ -260,12 +294,29 @@ function processData(rows, forecast) {
       if (cat === 'Retiro Socio') {
         monthMap[mes].retiros += monto;
         totalRetiros += monto;
+        // Identificar persona
+        const notes = getField(r, NOTE_COLS);
+        const person = extractPerson(notes) || extractPerson(r.Cliente) || 'Sin identificar';
+        if (!withdrawalPersonMonth[mes]) withdrawalPersonMonth[mes] = {};
+        withdrawalPersonMonth[mes][person] = (withdrawalPersonMonth[mes][person] || 0) + monto;
+        withdrawalPersonTotal[person] = (withdrawalPersonTotal[person] || 0) + monto;
       } else if (cat === 'Impuestos') {
         monthMap[mes].impuestos += monto;
         totalImpuestos += monto;
       } else {
         monthMap[mes].gastosOp += monto;
         totalGastosOp += monto;
+        // Detectar nómina (Nómina/Nomina/Sueldos/Honorarios)
+        const catNorm = stripAccents(cat).toLowerCase();
+        if (catNorm === 'nomina' || catNorm === 'sueldos' || catNorm === 'honorarios') {
+          monthMap[mes].nomina += monto;
+          totalNomina += monto;
+          const notes = getField(r, NOTE_COLS);
+          const person = extractPerson(notes) || extractPerson(r.Cliente) || 'Sin identificar';
+          if (!payrollPersonMonth[mes]) payrollPersonMonth[mes] = {};
+          payrollPersonMonth[mes][person] = (payrollPersonMonth[mes][person] || 0) + monto;
+          payrollPersonTotal[person] = (payrollPersonTotal[person] || 0) + monto;
+        }
       }
     }
   });
@@ -276,7 +327,7 @@ function processData(rows, forecast) {
   const currentMonthName = MESES_ORDER[new Date().getMonth()];
   const dayOfMonth = new Date().getDate();
 
-  // Calculate averages from completed months (exclude current month)
+  // Calculate averages from completed months
   let completedMonths = 0, sumIngCompleted = 0, sumGastosCompleted = 0;
   MESES_ORDER.forEach(mes => {
     if (monthMap[mes] && mes !== currentMonthName) {
@@ -293,8 +344,6 @@ function processData(rows, forecast) {
       const m = monthMap[mes];
       const isCurrentMonth = (mes === currentMonthName);
       const profitOp = m.ingresos - m.gastosOp;
-
-      // For current month: use FORECAST projection if available, else average
       let projectedIng = null, projectedGastos = null, projectedProfit = null;
       const fc = forecast[mes] || {};
       if (isCurrentMonth && dayOfMonth <= 20) {
@@ -308,15 +357,12 @@ function processData(rows, forecast) {
           projectedProfit = Math.round(avgIng - avgGastos);
         }
       }
-
-      // Store forecast for all months (for trend line)
       let forecastProfit = null;
       if (fc.profitProyectado > 0) {
         forecastProfit = Math.round(fc.profitProyectado);
       } else if (fc.ingProyectado > 0 && fc.gastoProyectado > 0) {
         forecastProfit = Math.round(fc.ingProyectado - fc.gastoProyectado);
       }
-
       data.monthly.push({
         mes: mes.substring(0,3),
         mesFull: mes,
@@ -324,6 +370,7 @@ function processData(rows, forecast) {
         gastosOp: Math.round(m.gastosOp),
         retiros: Math.round(m.retiros),
         impuestos: Math.round(m.impuestos),
+        nomina: Math.round(m.nomina),
         profitOp: Math.round(profitOp),
         resultadoNeto: Math.round(profitOp - m.impuestos),
         recurrente: Math.round(m.recurrente),
@@ -337,7 +384,7 @@ function processData(rows, forecast) {
     }
   });
 
-  // Income by type (Recurrente vs Nuevo)
+  // Income type
   data.incomeByType = {
     recurrente: Math.round(totalRecurrente),
     nuevo: Math.round(totalNuevo),
@@ -345,7 +392,7 @@ function processData(rows, forecast) {
     pctNuevo: totalIng > 0 ? ((totalNuevo/totalIng)*100).toFixed(1) : 0
   };
 
-  // Category aggregation (only operating expenses)
+  // Category aggregation
   const incCatMap = {}, expCatMap = {};
   rows.forEach(r => {
     const cat = r['Categoría'] || r['Categoria'] || 'Otro';
@@ -353,12 +400,10 @@ function processData(rows, forecast) {
     if (r.Tipo === 'Ingreso') incCatMap[cat] = (incCatMap[cat] || 0) + monto;
     else if (r.Tipo === 'Egreso' && !NON_OPERATING.includes(cat)) expCatMap[cat] = (expCatMap[cat] || 0) + monto;
   });
-
   data.incomeByCategory = Object.entries(incCatMap).sort((a,b) => b[1]-a[1]).map(([name, value]) => ({ name, value: Math.round(value), pct: totalIng > 0 ? ((value/totalIng)*100).toFixed(1) : 0 }));
   data.expenseByCategory = Object.entries(expCatMap).sort((a,b) => b[1]-a[1]).map(([name, value]) => ({ name, value: Math.round(value), pct: totalGastosOp > 0 ? ((value/totalGastosOp)*100).toFixed(1) : 0 }));
 
-  // Top clients - group by base client name to avoid duplicates
-  // Client aliases: map known variations to a canonical name
+  // Top clients
   const CLIENT_ALIASES = {
     'Capital Park': 'Urbano Park',
     'Encore': 'Urbano Park',
@@ -366,18 +411,13 @@ function processData(rows, forecast) {
     'Capital Park + Encore': 'Urbano Park',
     'Capital Park + Encore San Angel': 'Urbano Park'
   };
-
   function getBaseClientName(fullName) {
     if (!fullName) return '';
     let name = fullName.trim();
-    // Remove common suffixes/patterns
     const separators = [' - ', ' 50%', ' Set Up', ' set up', ' Mensualidad', ' mensualidad', ' Pago ', ' pago ', ' saldo ', ' Saldo ', ' anticipo', ' Anticipo', ' 1era ', ' 2da ', ' 3era '];
     let cutPoint = name.length;
-    // Handle " + " carefully - check alias first
     const plusIdx = name.indexOf(' + ');
     if (plusIdx > 0) {
-      // Try the full name with + first for alias matching
-      const beforePlus = name.substring(0, plusIdx).trim();
       const withPlus = name.substring(0, name.indexOf(' ', plusIdx + 3) > 0 ? name.indexOf(' ', plusIdx + 3) : name.length).trim();
       if (CLIENT_ALIASES[withPlus]) return CLIENT_ALIASES[withPlus];
       if (CLIENT_ALIASES[name.trim()]) return CLIENT_ALIASES[name.trim()];
@@ -388,11 +428,9 @@ function processData(rows, forecast) {
     });
     name = name.substring(0, cutPoint).trim();
     name = name.replace(/\s+(Inicial|Set|Up|De|de)$/i, '').trim();
-    // Apply alias mapping
     if (CLIENT_ALIASES[name]) return CLIENT_ALIASES[name];
     return name;
   }
-
   const clientMap = {};
   rows.filter(r => r.Tipo === 'Ingreso' && r.Cliente).forEach(r => {
     const baseName = getBaseClientName(r.Cliente);
@@ -400,15 +438,50 @@ function processData(rows, forecast) {
   });
   data.topClients = Object.entries(clientMap).sort((a,b) => b[1]-a[1]).slice(0,10).map(([name, total]) => ({ name, total: Math.round(total) }));
 
+  // ============================================================
+  // Datos Nómina y Retiros por persona
+  // ============================================================
+  const monthsWithData = MESES_ORDER.filter(m => monthMap[m]);
+
+  const payrollPeople = Object.keys(payrollPersonTotal).sort((a,b) => payrollPersonTotal[b] - payrollPersonTotal[a]);
+  const withdrawalPeople = Object.keys(withdrawalPersonTotal).sort((a,b) => withdrawalPersonTotal[b] - withdrawalPersonTotal[a]);
+
+  const payrollGrand = Object.values(payrollPersonTotal).reduce((a,b) => a+b, 0);
+  const withdrawalGrand = Object.values(withdrawalPersonTotal).reduce((a,b) => a+b, 0);
+
+  data.payroll = {
+    people: payrollPeople,
+    totalsByPerson: payrollPersonTotal,
+    monthly: monthsWithData.map(m => ({
+      mes: m.substring(0,3),
+      mesFull: m,
+      values: payrollPersonMonth[m] || {},
+      total: Object.values(payrollPersonMonth[m] || {}).reduce((a,b) => a+b, 0)
+    })),
+    grandTotal: Math.round(payrollGrand)
+  };
+
+  data.withdrawals = {
+    people: withdrawalPeople,
+    totalsByPerson: withdrawalPersonTotal,
+    monthly: monthsWithData.map(m => ({
+      mes: m.substring(0,3),
+      mesFull: m,
+      values: withdrawalPersonMonth[m] || {},
+      total: Object.values(withdrawalPersonMonth[m] || {}).reduce((a,b) => a+b, 0)
+    })),
+    grandTotal: Math.round(withdrawalGrand)
+  };
+
   const profitOp = totalIng - totalGastosOp;
   const resultadoNeto = profitOp - totalImpuestos;
-
   data.totals = {
     ingresos: Math.round(totalIng),
     gastosOp: Math.round(totalGastosOp),
     totalEgresos: Math.round(totalEgresos),
     retiros: Math.round(totalRetiros),
     impuestos: Math.round(totalImpuestos),
+    nomina: Math.round(totalNomina),
     profitOp: Math.round(profitOp),
     resultadoNeto: Math.round(resultadoNeto),
     margenOp: totalIng > 0 ? ((profitOp/totalIng)*100).toFixed(1) : 0,
@@ -419,14 +492,32 @@ function processData(rows, forecast) {
     numMeses: Object.keys(monthMap).length,
     topCliente: data.topClients[0] ? { name: data.topClients[0].name, pct: totalIng > 0 ? ((data.topClients[0].total/totalIng)*100).toFixed(1) : 0 } : { name: '-', pct: 0 }
   };
-
   return data;
+}
+
+// Construye el HTML de las tarjetitas por persona (leyenda con totales)
+function renderPersonLegend(people, totalsByPerson, grandTotal) {
+  if (!people.length) {
+    return '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No hay registros para mostrar.</div>';
+  }
+  return '<div class="person-grid">' + people.map((p, i) => {
+    const t = totalsByPerson[p] || 0;
+    const pct = grandTotal > 0 ? ((t/grandTotal)*100).toFixed(1) : 0;
+    const color = PERSON_COLORS[i % PERSON_COLORS.length];
+    return '<div class="person-card">' +
+      '<span class="person-dot" style="background:' + color + '"></span>' +
+      '<div class="person-info">' +
+        '<div class="person-name">' + p + '</div>' +
+        '<div class="person-total">' + fmt(t) + '</div>' +
+        '<div class="person-pct">' + pct + '% del total</div>' +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
 }
 
 function render(data) {
   const d = data.totals;
   const now = new Date();
-
   document.getElementById('app').innerHTML = `
     <div class="header">
       <div>
@@ -441,7 +532,6 @@ function render(data) {
         <button class="refresh-btn" onclick="loadDashboard()">↻ Actualizar</button>
       </div>
     </div>
-
     <div class="kpi-grid">
       <div class="kpi" style="border-color:var(--green-dim);background:linear-gradient(135deg,var(--card),#3dbb7d08)">
         <div class="kpi-icon">$</div>
@@ -468,19 +558,35 @@ function render(data) {
         <div class="kpi-sub">Después de impuestos</div>
       </div>
     </div>
-
     <div id="secondaryKpis"></div>
-
     <div class="section-title"><span style="font-size:22px">📊</span><h2>Ingresos vs Gastos por Mes</h2><div class="line"></div></div>
     <div class="chart-card"><canvas id="barChart" height="140"></canvas></div>
-
     <div class="section-title"><span style="font-size:22px">📈</span><h2>Tendencia de Profit</h2><div class="line"></div></div>
     <div class="chart-card"><canvas id="profitChart" height="100"></canvas></div>
-
     <div class="section-title"><span style="font-size:22px">🔄</span><h2>Ingresos: Recurrente vs Nuevo</h2><div class="line"></div></div>
     <div class="chart-card">
       <canvas id="incomeTypeChart" height="100"></canvas>
       <div id="incomeTypeSummary" style="margin-top:16px"></div>
+    </div>
+
+    <div class="section-title"><span style="font-size:22px">👥</span><h2>Nómina por Persona (mes a mes)</h2><div class="line"></div></div>
+    <div class="chart-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--text-2)">Egresos categoría <strong>Nómina</strong>, persona detectada en columna Notas.</div>
+        <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-light)">Total: ${fmt(data.payroll.grandTotal)}</div>
+      </div>
+      <canvas id="payrollChart" height="120"></canvas>
+      <div id="payrollLegend" style="margin-top:16px"></div>
+    </div>
+
+    <div class="section-title"><span style="font-size:22px">🤝</span><h2>Retiros de Socios por Persona (mes a mes)</h2><div class="line"></div></div>
+    <div class="chart-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:var(--text-2)">Egresos categoría <strong>Retiro Socio</strong>, persona detectada en columna Notas.</div>
+        <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--purple)">Total: ${fmt(data.withdrawals.grandTotal)}</div>
+      </div>
+      <canvas id="withdrawalChart" height="120"></canvas>
+      <div id="withdrawalLegend" style="margin-top:16px"></div>
     </div>
 
     <div class="section-title"><span style="font-size:22px">📂</span><h2>Desglose por Categorías</h2><div class="line"></div></div>
@@ -496,10 +602,8 @@ function render(data) {
         <div id="expenseLegend" style="margin-top:16px"></div>
       </div>
     </div>
-
     <div class="section-title"><span style="font-size:22px">🏢</span><h2>Top Clientes por Facturación</h2><div class="line"></div></div>
     <div class="chart-card" id="clientsSection"></div>
-
     <div class="section-title"><span style="font-size:22px">🩺</span><h2>Indicadores de Salud Financiera</h2><div class="line"></div></div>
     <div class="health-grid">
       <div class="health-card">
@@ -523,14 +627,18 @@ function render(data) {
         <div class="health-desc">${d.numMeses >= 3 ? 'Q' + Math.ceil(d.numMeses/3) + ' completo' : 'En progreso'}</div>
       </div>
     </div>
-
     <div class="footer"><p>Trichter Consulting · Dashboard Financiero · Datos en tiempo real</p></div>
   `;
 
-  // Render secondary KPIs (retiros, impuestos, etc.)
-  if (d.retiros > 0 || d.impuestos > 0) {
+  // Secondary KPIs (incluye ahora Nómina Total)
+  if (d.retiros > 0 || d.impuestos > 0 || d.nomina > 0) {
     document.getElementById('secondaryKpis').innerHTML =
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:32px">' +
+        '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
+          '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Nómina Total</div>' +
+          '<div style="font-size:22px;font-weight:700;color:var(--blue);font-family:\'Poppins\',sans-serif">' + fmt(d.nomina) + '</div>' +
+          '<div style="font-size:11px;color:var(--text-3);margin-top:2px">Sueldos a equipo</div>' +
+        '</div>' +
         '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
           '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Retiros Socios</div>' +
           '<div style="font-size:22px;font-weight:700;color:var(--purple);font-family:\'Poppins\',sans-serif">' + fmt(d.retiros) + '</div>' +
@@ -554,12 +662,14 @@ function render(data) {
       '</div>';
   }
 
-  // Render Charts
+  // ============================================================
+  // Charts
+  // ============================================================
   Chart.defaults.color = '#8a8070';
   Chart.defaults.borderColor = '#1f1d1a';
   Chart.defaults.font.family = "'JetBrains Mono', monospace";
 
-  // Bar Chart - with projected values for current month
+  // Bar Chart - Ingresos vs Gastos
   const barIngData = data.monthly.map(m => m.isPartial && m.projectedIng ? m.projectedIng : m.ingresos);
   const barGastosData = data.monthly.map(m => m.isPartial && m.projectedGastos ? m.projectedGastos : m.gastosOp);
   const barIngColors = data.monthly.map(m => m.isPartial && m.projectedIng ? '#3dbb7d55' : '#3dbb7d');
@@ -567,40 +677,37 @@ function render(data) {
   const barIngBorders = data.monthly.map(m => m.isPartial && m.projectedIng ? '#3dbb7d' : 'transparent');
   const barGastosBorders = data.monthly.map(m => m.isPartial && m.projectedGastos ? '#e04545' : 'transparent');
   const barLabels = data.monthly.map(m => m.isPartial ? m.mes + ' (proy.)' : m.mes);
-
   new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
       labels: barLabels,
       datasets: [
-        { label: 'Ingresos', data: barIngData, backgroundColor: barIngColors, borderColor: barIngBorders, borderWidth: 2, borderRadius: 6, borderDash: data.monthly.map(m => m.isPartial ? [4,4] : []) },
+        { label: 'Ingresos', data: barIngData, backgroundColor: barIngColors, borderColor: barIngBorders, borderWidth: 2, borderRadius: 6 },
         { label: 'Gastos Op.', data: barGastosData, backgroundColor: barGastosColors, borderColor: barGastosBorders, borderWidth: 2, borderRadius: 6 }
       ]
     },
     options: { responsive: true, plugins: { legend: { labels: { font: { family: "'Poppins'" } } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } } } }
   });
 
-  // Profit Area Chart - with forecast line from FORECAST tab
+  // Profit Area Chart with forecast
   const profitData = data.monthly.map(m => m.isPartial && m.projectedProfit !== null ? m.projectedProfit : m.profitOp);
   const forecastData = data.monthly.map(m => m.forecastProfit);
   const hasForecast = forecastData.some(v => v !== null && v > 0);
   const profitPointStyles = data.monthly.map(m => m.isPartial ? 'rectRot' : 'circle');
   const profitPointRadius = data.monthly.map(m => m.isPartial ? 7 : 5);
-
   var profitDatasets = [
     { label: 'Profit Real', data: profitData, borderColor: '#c59b3f', backgroundColor: '#c59b3f22', fill: true, tension: 0.3, pointRadius: profitPointRadius, pointStyle: profitPointStyles, pointBackgroundColor: '#c59b3f', borderWidth: 3, segment: { borderDash: function(ctx) { return data.monthly[ctx.p1DataIndex] && data.monthly[ctx.p1DataIndex].isPartial ? [6,3] : undefined; } } }
   ];
   if (hasForecast) {
     profitDatasets.push({ label: 'Profit Proyectado (Forecast)', data: forecastData, borderColor: '#5a9fd4', backgroundColor: '#5a9fd411', fill: false, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#5a9fd4', borderWidth: 2, borderDash: [6,4] });
   }
-
   new Chart(document.getElementById('profitChart'), {
     type: 'line',
     data: { labels: barLabels, datasets: profitDatasets },
     options: { responsive: true, plugins: { legend: { labels: { font: { family: "'Poppins'" } } } }, scales: { y: { ticks: { callback: v => fmt(v) } } } }
   });
 
-  // Income Type Chart (Recurrente vs Nuevo)
+  // Income Type Chart
   new Chart(document.getElementById('incomeTypeChart'), {
     type: 'bar',
     data: {
@@ -613,21 +720,78 @@ function render(data) {
     options: { responsive: true, plugins: { legend: { labels: { font: { family: "'Poppins'" } } } }, scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } } } }
   });
 
-  // Income Type Summary
   var iType = data.incomeByType;
   document.getElementById('incomeTypeSummary').innerHTML =
     '<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center">' +
       '<div style="text-align:center">' +
         '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace">Recurrente</div>' +
-        '<div style="font-size:24px;font-weight:700;color:#c59b3f;font-family:\'Playfair Display\',serif">' + fmt(iType.recurrente) + '</div>' +
+        '<div style="font-size:24px;font-weight:700;color:#c59b3f;font-family:\'Poppins\',sans-serif">' + fmt(iType.recurrente) + '</div>' +
         '<div style="font-size:12px;color:var(--text-3)">' + iType.pctRecurrente + '% del total</div>' +
       '</div>' +
       '<div style="text-align:center">' +
         '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace">Nuevo</div>' +
-        '<div style="font-size:24px;font-weight:700;color:#5a9fd4;font-family:\'Playfair Display\',serif">' + fmt(iType.nuevo) + '</div>' +
+        '<div style="font-size:24px;font-weight:700;color:#5a9fd4;font-family:\'Poppins\',sans-serif">' + fmt(iType.nuevo) + '</div>' +
         '<div style="font-size:12px;color:var(--text-3)">' + iType.pctNuevo + '% del total</div>' +
       '</div>' +
     '</div>';
+
+  // ============================================================
+  // Nómina por persona (stacked bar)
+  // ============================================================
+  const payroll = data.payroll;
+  const payrollLabels = payroll.monthly.map(m => m.mes);
+  const payrollDatasets = payroll.people.map((person, i) => ({
+    label: person,
+    data: payroll.monthly.map(m => Math.round(m.values[person] || 0)),
+    backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length],
+    borderRadius: 6,
+    borderWidth: 0
+  }));
+  new Chart(document.getElementById('payrollChart'), {
+    type: 'bar',
+    data: { labels: payrollLabels, datasets: payrollDatasets.length ? payrollDatasets : [{ label: 'Sin datos', data: payrollLabels.map(() => 0), backgroundColor: '#333' }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { font: { family: "'Poppins'" } } },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } }
+      }
+    }
+  });
+  document.getElementById('payrollLegend').innerHTML = renderPersonLegend(payroll.people, payroll.totalsByPerson, payroll.grandTotal);
+
+  // ============================================================
+  // Retiros de socios por persona (stacked bar)
+  // ============================================================
+  const withdr = data.withdrawals;
+  const withdrLabels = withdr.monthly.map(m => m.mes);
+  const withdrDatasets = withdr.people.map((person, i) => ({
+    label: person,
+    data: withdr.monthly.map(m => Math.round(m.values[person] || 0)),
+    backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length],
+    borderRadius: 6,
+    borderWidth: 0
+  }));
+  new Chart(document.getElementById('withdrawalChart'), {
+    type: 'bar',
+    data: { labels: withdrLabels, datasets: withdrDatasets.length ? withdrDatasets : [{ label: 'Sin datos', data: withdrLabels.map(() => 0), backgroundColor: '#333' }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { font: { family: "'Poppins'" } } },
+        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } }
+      }
+    }
+  });
+  document.getElementById('withdrawalLegend').innerHTML = renderPersonLegend(withdr.people, withdr.totalsByPerson, withdr.grandTotal);
 
   // Income Pie
   new Chart(document.getElementById('incomePie'), {
@@ -671,7 +835,6 @@ async function loadDashboard() {
 }
 
 loadDashboard();
-// Auto-refresh every 5 minutes
 setInterval(loadDashboard, 5 * 60 * 1000);
 </script>
 </body>
