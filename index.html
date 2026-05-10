@@ -3,853 +3,376 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Finanzas Trichter Consulting 2026</title>
+  <title>Finanzas — Trichter Consulting 2026</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23090909'/><text y='22' x='4' font-size='18' font-weight='bold' fill='%23c59b3f'>TC</text></svg>">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg: #090909; --card: #111111; --border: #1f1d1a;
-      --accent: #c59b3f; --accent-dim: #c59b3f22;
-      --accent-light: #d4af5a; --accent-dark: #a07e2e;
-      --gold: #c59b3f;
-      --red: #e04545; --red-dim: #e0454522;
-      --green: #3dbb7d; --green-dim: #3dbb7d22;
-      --blue: #5a9fd4; --purple: #9b7fd4;
-      --text-1: #f2ece0; --text-2: #8a8070; --text-3: #5a5348;
+      --bg:#090909;--card:#111111;--border:#1f1d1a;--border2:#2a2824;
+      --accent:#c59b3f;--accent-dim:#c59b3f18;--accent-light:#d4af5a;--accent-dark:#a07e2e;
+      --red:#e04545;--red-dim:#e0454518;--green:#3dbb7d;--green-dim:#3dbb7d18;
+      --blue:#5a9fd4;--blue-dim:#5a9fd418;--purple:#9b7fd4;--orange:#e08a45;--orange-dim:#e08a4518;
+      --text-1:#f2ece0;--text-2:#8a8070;--text-3:#5a5348;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text-1); font-family: 'Poppins', -apple-system, sans-serif; padding: 0 20px 60px; min-height: 100vh; }
-    .header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
-    .logo-img { width: 48px; height: 48px; border-radius: 10px; }
-    .title { font-size: 28px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--accent); }
-    .subtitle { font-size: 14px; color: var(--text-2); font-family: 'Poppins', sans-serif; }
-    .last-update { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; }
-    .refresh-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
-    .refresh-btn:hover { background: var(--accent); color: var(--bg); }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 40px; }
-    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; position: relative; overflow: hidden; transition: transform 0.2s; }
-    .kpi:hover { transform: translateY(-2px); }
-    .kpi-icon { position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.06; }
-    .kpi-label { font-size: 12px; color: var(--text-2); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
-    .kpi-value { font-size: 36px; font-weight: 700; font-family: 'Poppins', sans-serif; line-height: 1.1; }
-    .kpi-sub { font-size: 13px; color: var(--text-3); margin-top: 8px; }
-    .kpi-trend { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; margin-right: 6px; }
-    .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; margin-top: 40px; }
-    .section-title h2 { font-size: 20px; font-weight: 700; font-family: 'Poppins', sans-serif; color: var(--text-1); }
-    .section-title .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--accent-dark), transparent); margin-left: 12px; }
-    .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
-    .cat-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
-    .cat-dot { width: 10px; height: 10px; border-radius: 3px; margin-right: 10px; }
-    .cat-name { font-size: 13px; color: var(--text-2); }
-    .cat-value { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
-    .cat-pct { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; width: 40px; text-align: right; margin-left: 12px; }
-    .client-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-    .client-rank { font-size: 14px; font-weight: 700; color: var(--text-3); font-family: 'JetBrains Mono', monospace; width: 24px; }
-    .client-info { flex: 1; }
-    .client-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
-    .client-name { font-size: 14px; font-weight: 600; }
-    .client-total { font-size: 14px; font-weight: 600; color: var(--accent-light); font-family: 'JetBrains Mono', monospace; }
-    .client-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
-    .client-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
-    .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .health-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-    .health-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
-    .health-value { font-size: 24px; font-weight: 700; font-family: 'Poppins', sans-serif; }
-    .health-desc { font-size: 12px; color: var(--text-3); margin-top: 4px; }
-    .person-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; }
-    .person-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
-    .person-dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
-    .person-info { flex: 1; min-width: 0; }
-    .person-name { font-size: 13px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .person-total { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent-light); }
-    .person-pct { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
-    .loading { text-align: center; padding: 60px; color: var(--text-2); }
-    .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .footer { margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); text-align: center; }
-    .footer p { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
-    @media (max-width: 768px) {
-      .kpi-value { font-size: 28px; }
-      .title { font-size: 22px; }
-      .two-col { grid-template-columns: 1fr; }
-    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--bg);color:var(--text-1);font-family:'Poppins',sans-serif;padding:0 24px 80px;min-height:100vh;}
+    .header{padding:28px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+    .header-left{display:flex;align-items:center;gap:14px;}
+    .logo-img{width:44px;height:44px;border-radius:10px;}
+    .title{font-size:24px;font-weight:700;color:var(--accent);}
+    .subtitle{font-size:13px;color:var(--text-3);margin-top:2px;}
+    .header-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .last-update{font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;padding:6px 12px;border:1px solid var(--border);border-radius:8px;}
+    .btn{padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;transition:all 0.2s;border:1px solid;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+    .btn-accent{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+    .btn-accent:hover{background:var(--accent);color:var(--bg);}
+    .btn-ghost{background:transparent;border-color:var(--border);color:var(--text-2);}
+    .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+    .alert-banner{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:10px;margin-bottom:10px;border:1px solid;font-size:13px;}
+    .alert-banner.red{background:var(--red-dim);border-color:#e0454540;color:#f08080;}
+    .alert-banner.amber{background:var(--orange-dim);border-color:#e08a4540;color:#e0b070;}
+    .alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+    .alert-dot.red{background:var(--red);}
+    .alert-dot.amber{background:var(--orange);}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px;}
+    .kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;transition:transform 0.2s;}
+    .kpi:hover{transform:translateY(-2px);}
+    .kpi-g{border-color:#3dbb7d28;} .kpi-r{border-color:#e0454528;} .kpi-a{border-color:#c59b3f28;} .kpi-b{border-color:#5a9fd428;}
+    .kpi-label{font-size:10px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+    .kpi-value{font-size:32px;font-weight:700;line-height:1.1;}
+    .kpi-sub{font-size:12px;color:var(--text-3);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .badge{display:inline-block;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:20px;}
+    .bg{background:var(--green-dim);color:var(--green);border:1px solid #3dbb7d28;}
+    .br{background:var(--red-dim);color:var(--red);border:1px solid #e0454528;}
+    .ba{background:var(--orange-dim);color:var(--orange);border:1px solid #e08a4528;}
+    .bb{background:var(--blue-dim);color:var(--blue);border:1px solid #5a9fd428;}
+    .bx{background:var(--accent-dim);color:var(--accent);border:1px solid #c59b3f28;}
+    .mrr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:14px;}
+    .mrr-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;}
+    .mrr-hl{border-color:#c59b3f38;}
+    .sem{display:flex;align-items:center;gap:10px;margin-top:8px;}
+    .sem-bar{flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden;}
+    .sem-fill{height:100%;border-radius:3px;}
+    .section-title{display:flex;align-items:center;gap:10px;margin:36px 0 16px;}
+    .section-title h2{font-size:17px;font-weight:700;white-space:nowrap;}
+    .section-title .line{flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent);margin-left:8px;}
+    .chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;}
+    .chart-sub{font-size:12px;color:var(--text-3);margin-bottom:14px;}
+    .two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;}
+    .pnl-t{width:100%;border-collapse:collapse;}
+    .pnl-t td{padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border);}
+    .pnl-t tr:last-child td{border-bottom:none;}
+    .pl{color:var(--text-2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.3px;}
+    .pv{text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;}
+    .pnl-div td{border-top:1px solid var(--border2);background:#ffffff03;padding-top:10px;padding-bottom:3px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);}
+    .pnl-tot td{font-weight:700;font-size:14px;background:#ffffff04;border-top:1px solid #c59b3f30!important;}
+    .cat-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);}
+    .cat-item:last-child{border-bottom:none;}
+    .cat-dot{width:8px;height:8px;border-radius:2px;margin-right:8px;flex-shrink:0;}
+    .cat-name{font-size:13px;color:var(--text-2);}
+    .cat-v{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+    .cat-p{font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;width:36px;text-align:right;}
+    .cli-row{margin-bottom:13px;}
+    .cli-hdr{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline;gap:8px;}
+    .cli-name{font-size:13px;font-weight:600;}
+    .cli-total{font-size:13px;font-weight:600;color:var(--accent-light);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+    .cli-bar{height:5px;background:var(--border2);border-radius:3px;overflow:hidden;}
+    .cli-fill{height:100%;border-radius:3px;}
+    .cli-meta{font-size:11px;color:var(--text-3);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+    .person-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:14px;}
+    .person-card{background:#ffffff03;border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+    .person-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+    .person-name{font-size:13px;font-weight:600;}
+    .person-total{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-light);}
+    .person-pct{font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;}
+    .health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
+    .health-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+    .health-label{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+    .health-value{font-size:26px;font-weight:700;}
+    .health-desc{font-size:12px;color:var(--text-3);margin-top:4px;}
+    .loading{text-align:center;padding:80px 20px;color:var(--text-2);}
+    .spinner{display:inline-block;width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .footer{margin-top:56px;padding:18px 0;border-top:1px solid var(--border);text-align:center;}
+    .footer p{font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;}
+    @media(max-width:640px){body{padding:0 14px 60px;}.kpi-value{font-size:26px;}.title{font-size:20px;}.two-col{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
-<div id="app">
-  <div class="loading">
-    <div class="loading-spinner"></div>
-    <p>Cargando datos de Google Sheets...</p>
-  </div>
-</div>
+<div id="app"><div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div></div>
 <script>
-// ============================================================
-// CONFIGURACIÓN - Cambiar estos valores
-// ============================================================
-const SPREADSHEET_ID = '1wI5pQfW_rGrwoH56DpdBaiIavHNSdNgwreOCIsJyTWs';
-const SHEET_NAME = 'REGISTRO';
-const HEADER_ROW = 3; // Row where headers are (ID, Fecha, Mes, etc.)
-// ============================================================
-const COLORS = ['#c59b3f','#d4af5a','#a07e2e','#5a9fd4','#9b7fd4','#3dbb7d','#e0a56a','#7eb89e'];
-// Distinct palette for people (nómina/retiros)
-const PERSON_COLORS = ['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e0a56a','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a'];
-const MESES_ORDER = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const SPREADSHEET_ID='1wI5pQfW_rGrwoH56DpdBaiIavHNSdNgwreOCIsJyTWs';
+const SHEET_NAME='REGISTRO';
+const USD_RATE=16.5;
+const MESES_ORDER=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const COLORS=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a'];
+const PC=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060'];
+const NON_OP=['Retiro Socio','Impuestos'];
+const REC_CATS=['Software Recurrente'];
+const REC_SUBS=['mensualidad','suscripción','rebilling','whatsapp templates'];
+const PA={'eugenia':'Eugenia','euge':'Eugenia','peronace':'Eugenia','jesus':'Jesus','jesús':'Jesus','leal':'Jesus','axel':'Axel','benjamin':'Benjamin','benjamín':'Benjamin','benja':'Benjamin','cristian':'Cristian','christian':'Cristian','quimey':'Quimey','moreira':'Quimey','liliana':'Liliana','lili':'Liliana','daniel':'Daniel'};
+const PL=['Concepto','Subcategoría','Subcategoria','Notas'];
+function sa(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function ep(text){if(!text)return null;const l=sa(String(text).toLowerCase());for(const a of Object.keys(PA).sort((x,y)=>y.length-x.length)){const re=new RegExp('(^|[^a-z0-9])'+sa(a).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i');if(re.test(l))return PA[a];}return null;}
+function fp(row){for(const c of PL){const p=ep(row[c]);if(p)return p;}return null;}
+function pm(s){if(!s&&s!==0)return 0;if(typeof s==='number')return s;let v=String(s).replace(/[A-Za-z$\s]/g,'');if(v.includes(',')&&v.includes('.')){v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.replace(/\./g,'').replace(',','.'):v.replace(/,/g,'');}else if(v.includes(',')){const p=v.split(',');v=p[p.length-1].length===2?v.replace(',','.'):v.replace(/,/g,'');}else if(v.includes('.')){const p=v.split('.');if(p.length>2)v=v.replace(/\./g,'');else if(p[1]&&p[1].length===3&&parseFloat(v)>=1)v=v.replace('.','')}return parseFloat(v)||0;}
+function fmt(n){const v=parseFloat(n)||0;if(v>=1000000)return'$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return'$'+Math.round(v).toLocaleString('es-MX');return'$'+v;}
+function fu(n){const v=parseFloat(n)||0;if(v>=1000)return'USD $'+(v/1000).toFixed(1)+'k';return'USD $'+Math.round(v);}
+function isRec(r){const cat=(r['Categoría']||r['Categoria']||'').trim();const sub=sa((r['Subcategoría']||r['Subcategoria']||'')).toLowerCase();if(REC_CATS.includes(cat))return true;return REC_SUBS.some(s=>sub.includes(s));}
 
-// ============================================================
-// REGISTRO DE PERSONAS
-// Para cada alias detectado en "Notas" mapeamos al nombre canónico.
-// Agregar más alias acá si aparecen en la planilla.
-// ============================================================
-const PEOPLE_ALIASES = {
-  'eugenia': 'Eugenia',
-  'euge':    'Eugenia',
-  'peronace':'Eugenia',
-  'jesus':   'Jesus',
-  'jesús':   'Jesus',
-  'jesu':    'Jesus',
-  'leal':    'Jesus',
-  'axel':    'Axel',
-  'benjamin':'Benjamin',
-  'benjamín':'Benjamin',
-  'benja':   'Benjamin',
-  'cristian':'Cristian',
-  'christian':'Cristian',
-  'cris':    'Cristian',
-  'quimey':  'Quimey',
-  'moreira': 'Quimey',
-  'liliana': 'Liliana',
-  'lili':    'Liliana',
-  'daniel':  'Daniel'
-};
+function parseGviz(text){const s=text.indexOf('{'),e=text.lastIndexOf('}');if(s===-1||e===-1)return[];const d=JSON.parse(text.substring(s,e+1));if(!d.table||!d.table.cols||!d.table.rows)return[];const h=d.table.cols.map(c=>(c.label||c.id||'').trim());return d.table.rows.map(row=>{const o={};row.c.forEach((c,i)=>{if(!h[i])return;if(c===null){o[h[i]]='';return;}o[h[i]]=(c.v===null||c.v===undefined)?(c.f||''):typeof c.v==='number'?c.v:String(c.v);});return o;});}
+async function fetchSheet(sh){const url=`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sh)}`;const r=await fetch(url);return parseGviz(await r.text());}
 
-// Columnas donde puede aparecer el nombre de la persona, en orden de prioridad.
-// En esta planilla lo más fiable es "Concepto" (ej: "Honorarios Eugenia"), después "Subcategoria"
-// (ej: "Pago nómina Axel"), después "Notas" y por último "Cliente".
-const PERSON_LOOKUP_COLS = ['Concepto','Subcategoría','Subcategoria','Notas','Nota','Notes','Descripción','Descripcion','Detalle','Observaciones','Observacion','Comentario','Comentarios','Cliente'];
-
-function stripAccents(str) {
-  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
-// Busca el nombre canónico en un texto (Notas / Concepto / etc.).
-// Devuelve null si no encuentra coincidencias.
-function extractPerson(text) {
-  if (!text) return null;
-  const lower = stripAccents(String(text).toLowerCase());
-  // Ordenar por longitud descendente para priorizar coincidencias largas (ej. "benjamin" antes que "benja")
-  const aliases = Object.keys(PEOPLE_ALIASES).sort((a,b) => b.length - a.length);
-  for (const alias of aliases) {
-    const aliasNorm = stripAccents(alias.toLowerCase());
-    const re = new RegExp('(^|[^a-z0-9])' + aliasNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-z0-9])', 'i');
-    if (re.test(lower)) return PEOPLE_ALIASES[alias];
-  }
-  return null;
-}
-
-// Lee la primera columna no vacía entre los nombres candidatos del row
-function getField(row, candidates) {
-  for (const k of candidates) {
-    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') return row[k];
-  }
-  return '';
-}
-
-// Recorre PERSON_LOOKUP_COLS y devuelve el primer match encontrado.
-function findPerson(row) {
-  for (const col of PERSON_LOOKUP_COLS) {
-    const val = row[col];
-    if (!val) continue;
-    const p = extractPerson(val);
-    if (p) return p;
-  }
-  return null;
-}
-
-function parseMonto(str) {
-  if (!str && str !== 0) return 0;
-  if (typeof str === 'number') return str; // Already a number (from JSON)
-  // Remove currency text (MXN, USD, $) and spaces
-  let cleaned = String(str).replace(/[A-Za-z$\s]/g, '');
-  if (cleaned.includes(',') && cleaned.includes('.')) {
-    if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
-      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-    } else {
-      cleaned = cleaned.replace(/,/g, '');
-    }
-  } else if (cleaned.includes(',')) {
-    const parts = cleaned.split(',');
-    if (parts[parts.length - 1].length === 2) {
-      cleaned = cleaned.replace(',', '.');
-    } else {
-      cleaned = cleaned.replace(/,/g, '');
-    }
-  } else if (cleaned.includes('.')) {
-    const dotParts = cleaned.split('.');
-    if (dotParts.length > 2) {
-      cleaned = cleaned.replace(/\./g, '');
-    } else if (dotParts[1] && dotParts[1].length === 3 && parseFloat(cleaned) >= 1) {
-      cleaned = cleaned.replace('.', '');
-    }
-  }
-  return parseFloat(cleaned) || 0;
-}
-
-function fmt(n) {
-  const num = parseFloat(n) || 0;
-  if (num >= 1000000) return '$' + (num/1000000).toFixed(1) + 'M';
-  if (num >= 1000) return '$' + Math.round(num).toLocaleString('es-MX');
-  return '$' + num;
-}
-
-// Parse gviz JSON response → array of objects with header keys
-function parseGvizJSON(text) {
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  if (start === -1 || end === -1) return [];
-  const jsonStr = text.substring(start, end + 1);
-  const data = JSON.parse(jsonStr);
-  if (!data.table || !data.table.cols || !data.table.rows) return [];
-  const headers = data.table.cols.map(c => (c.label || c.id || '').trim());
-  const rows = [];
-  data.table.rows.forEach(row => {
-    const obj = {};
-    row.c.forEach((cell, idx) => {
-      if (!headers[idx]) return;
-      if (cell === null) { obj[headers[idx]] = ''; return; }
-      const val = cell.v;
-      if (val === null || val === undefined) {
-        obj[headers[idx]] = cell.f || '';
-      } else if (typeof val === 'number') {
-        obj[headers[idx]] = val;
-      } else {
-        obj[headers[idx]] = String(val);
-      }
-    });
-    rows.push(obj);
-  });
-  return rows;
-}
-
-async function fetchGvizSheet(sheetName) {
-  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sheetName)}`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  const text = await res.text();
-  if (!text || text.includes('<!DOCTYPE')) return [];
-  return parseGvizJSON(text);
-}
-
-async function fetchSheetData() {
-  const rows = await fetchGvizSheet(SHEET_NAME);
-  return rows.filter(r => r.Tipo);
-}
-
-async function fetchForecastData() {
-  try {
-    const rows = await fetchGvizSheet('FORECAST');
-    const forecast = {};
-    rows.forEach(r => {
-      const mes = (r.Mes || '').trim();
-      const concepto = (r.Concepto || '').trim();
-      if (!mes) return;
-      if (!forecast[mes]) forecast[mes] = {};
-      const proy = typeof r.Proyectado === 'number' ? r.Proyectado : parseMonto(r.Proyectado);
-      if (concepto === 'Total Ingresos') forecast[mes].ingProyectado = proy;
-      if (concepto === 'Total Gastos') forecast[mes].gastoProyectado = proy;
-      if (concepto === 'Profit') forecast[mes].profitProyectado = proy;
-    });
-    return forecast;
-  } catch (e) {
-    return {};
-  }
-}
-
-function processData(rows, forecast) {
-  forecast = forecast || {};
-  const data = { monthly: [], incomeByCategory: [], expenseByCategory: [], topClients: [], totals: {}, incomeByType: {}, payroll: {}, withdrawals: {} };
-  const NON_OPERATING = ['Retiro Socio', 'Impuestos'];
-
-  function isRecurringIncome(row) {
-    const subcat = (row['Subcategoría'] || row['Subcategoria'] || '').trim().toLowerCase();
-    const cat = (row['Categoría'] || row['Categoria'] || '').trim();
-    if (cat === 'Software Recurrente') return true;
-    if (subcat === 'mensualidad') return true;
-    return false;
-  }
-
-  let totalIng = 0, totalGastosOp = 0, totalRetiros = 0, totalImpuestos = 0, totalNomina = 0, totalTx = rows.length;
-  let totalRecurrente = 0, totalNuevo = 0;
-
-  // Estructuras para nómina y retiros por persona
-  const payrollPersonMonth = {};      // { mes: { persona: monto } }
-  const withdrawalPersonMonth = {};   // { mes: { persona: monto } }
-  const payrollPersonTotal = {};      // { persona: total }
-  const withdrawalPersonTotal = {};   // { persona: total }
-
-  // Monthly aggregation
-  const monthMap = {};
-  rows.forEach(r => {
-    const mes = r.Mes;
-    if (!mes) return;
-    if (!monthMap[mes]) monthMap[mes] = { ingresos: 0, gastosOp: 0, retiros: 0, impuestos: 0, nomina: 0, recurrente: 0, nuevo: 0 };
-    const monto = parseMonto(r['Monto MXN']);
-    const cat = r['Categoría'] || r['Categoria'] || 'Otro';
-
-    if (r.Tipo === 'Ingreso') {
-      monthMap[mes].ingresos += monto;
-      totalIng += monto;
-      if (isRecurringIncome(r)) {
-        monthMap[mes].recurrente += monto;
-        totalRecurrente += monto;
-      } else {
-        monthMap[mes].nuevo += monto;
-        totalNuevo += monto;
-      }
-    } else if (r.Tipo === 'Egreso') {
-      if (cat === 'Retiro Socio') {
-        monthMap[mes].retiros += monto;
-        totalRetiros += monto;
-        const person = findPerson(r) || 'Sin identificar';
-        if (!withdrawalPersonMonth[mes]) withdrawalPersonMonth[mes] = {};
-        withdrawalPersonMonth[mes][person] = (withdrawalPersonMonth[mes][person] || 0) + monto;
-        withdrawalPersonTotal[person] = (withdrawalPersonTotal[person] || 0) + monto;
-      } else if (cat === 'Impuestos') {
-        monthMap[mes].impuestos += monto;
-        totalImpuestos += monto;
-      } else {
-        monthMap[mes].gastosOp += monto;
-        totalGastosOp += monto;
-        // Detectar nómina (Nómina/Nomina/Sueldos/Honorarios)
-        const catNorm = stripAccents(cat).toLowerCase();
-        if (catNorm === 'nomina' || catNorm === 'sueldos' || catNorm === 'honorarios') {
-          monthMap[mes].nomina += monto;
-          totalNomina += monto;
-          const person = findPerson(r) || 'Sin identificar';
-          if (!payrollPersonMonth[mes]) payrollPersonMonth[mes] = {};
-          payrollPersonMonth[mes][person] = (payrollPersonMonth[mes][person] || 0) + monto;
-          payrollPersonTotal[person] = (payrollPersonTotal[person] || 0) + monto;
-        }
-      }
+function processData(rows,forecast){
+  forecast=forecast||{};
+  let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0;
+  const MM={},iCat={},eCat={},cliM={},payPM={},witPM={},payPT={},witPT={};
+  rows.forEach(r=>{
+    const mes=r.Mes;if(!mes)return;
+    const m=pm(r['Monto MXN']);
+    const cat=r['Categoría']||r['Categoria']||'Otro';
+    if(!MM[mes])MM[mes]={i:0,rec:0,nvo:0,gOp:0,nom:0,ret:0,imp:0};
+    if(r.Tipo==='Ingreso'){
+      tI+=m;MM[mes].i+=m;iCat[cat]=(iCat[cat]||0)+m;
+      const cli=r.Cliente;if(cli)cliM[cli]=(cliM[cli]||0)+m;
+      if(isRec(r)){tRec+=m;MM[mes].rec+=m;}else{tNuevo+=m;MM[mes].nvo+=m;}
+    }else if(r.Tipo==='Egreso'){
+      if(cat==='Retiro Socio'){tRet+=m;MM[mes].ret+=m;const p=fp(r)||'Otros';if(!witPM[mes])witPM[mes]={};witPM[mes][p]=(witPM[mes][p]||0)+m;witPT[p]=(witPT[p]||0)+m;}
+      else if(cat==='Impuestos'){tImp+=m;MM[mes].imp+=m;}
+      else{tGOp+=m;MM[mes].gOp+=m;eCat[cat]=(eCat[cat]||0)+m;const cn=sa(cat).toLowerCase();if(cn==='nomina'||cn==='sueldos'||cn==='honorarios'){tNom+=m;MM[mes].nom+=m;const p=fp(r)||'Sin identificar';if(!payPM[mes])payPM[mes]={};payPM[mes][p]=(payPM[mes][p]||0)+m;payPT[p]=(payPT[p]||0)+m;}}
     }
   });
+  const pOp=tI-tGOp,rNeto=pOp-tImp,rNom=tI>0?(tNom/tI*100):0;
+  const curMes=MESES_ORDER[new Date().getMonth()];
+  const mCon=MESES_ORDER.filter(m=>MM[m]);
+  const mCerr=mCon.filter(m=>m!==curMes).slice(-2);
+  const mrrEst=mCerr.length>0?Math.round(mCerr.reduce((s,m)=>s+(MM[m]?.rec||0),0)/mCerr.length):Math.round(tRec/(mCon.length||1));
 
-  const totalEgresos = totalGastosOp + totalRetiros + totalImpuestos;
+  const alerts=[];
+  const cd=MM[curMes];
+  if(cd){const rn=cd.i>0?cd.nom/cd.i*100:0;if(rn>65)alerts.push({t:'red',m:`Nómina este mes = ${rn.toFixed(0)}% de ingresos — zona crítica (>65%)`});else if(rn>50)alerts.push({t:'amber',m:`Nómina este mes = ${rn.toFixed(0)}% de ingresos — zona de atención (50–65%)`});if(cd.i===0&&new Date().getDate()>10)alerts.push({t:'red',m:'Sin ingresos registrados este mes y pasaron más de 10 días'});if(cd.gOp>cd.i&&cd.i>0)alerts.push({t:'amber',m:`Gastos operativos (${fmt(cd.gOp)}) superan ingresos este mes`});}
+  if(tRet>pOp&&pOp>0)alerts.push({t:'amber',m:`Retiros de socios (${fmt(tRet)}) superan profit operativo YTD (${fmt(pOp)})`});
 
-  // Determine current month to mark as partial
-  const currentMonthName = MESES_ORDER[new Date().getMonth()];
-  const dayOfMonth = new Date().getDate();
+  const monthly=MESES_ORDER.filter(m=>MM[m]).map(m=>{const d=MM[m];const fc=forecast[m]||{};return{mes:m.substring(0,3),mesFull:m,i:Math.round(d.i),rec:Math.round(d.rec),nvo:Math.round(d.nvo),gOp:Math.round(d.gOp),nom:Math.round(d.nom),ret:Math.round(d.ret),imp:Math.round(d.imp),pOp:Math.round(d.i-d.gOp),rNom:d.i>0?(d.nom/d.i*100):0,rGOp:d.i>0?(d.gOp/d.i*100):0,isP:m===curMes,fI:fc.ingProyectado||null,fG:fc.gastoProyectado||null};});
 
-  // Calculate averages from completed months
-  let completedMonths = 0, sumIngCompleted = 0, sumGastosCompleted = 0;
-  MESES_ORDER.forEach(mes => {
-    if (monthMap[mes] && mes !== currentMonthName) {
-      completedMonths++;
-      sumIngCompleted += monthMap[mes].ingresos;
-      sumGastosCompleted += monthMap[mes].gastosOp;
-    }
-  });
-  const avgIng = completedMonths > 0 ? sumIngCompleted / completedMonths : 0;
-  const avgGastos = completedMonths > 0 ? sumGastosCompleted / completedMonths : 0;
+  const CM={'Capital Park':'Urbano Park','Encore':'Urbano Park','Encore San Angel':'Urbano Park'};
+  const cliMrg={};Object.entries(cliM).forEach(([k,v])=>{let n=k.trim();for(const[a,c]of Object.entries(CM)){if(n.includes(a)){n=c;break;}}cliMrg[n]=(cliMrg[n]||0)+v;});
+  const topCli=Object.entries(cliMrg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([name,total])=>({name,total:Math.round(total)}));
+  const iBC=Object.entries(iCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tI>0?((v/tI)*100).toFixed(1):0}));
+  const eBC=Object.entries(eCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tGOp>0?((v/tGOp)*100).toFixed(1):0}));
+  const payP=Object.keys(payPT).sort((a,b)=>payPT[b]-payPT[a]);
+  const witP=Object.keys(witPT).sort((a,b)=>witPT[b]-witPT[a]);
+  const payG=Object.values(payPT).reduce((a,b)=>a+b,0);
+  const witG=Object.values(witPT).reduce((a,b)=>a+b,0);
 
-  MESES_ORDER.forEach(mes => {
-    if (monthMap[mes]) {
-      const m = monthMap[mes];
-      const isCurrentMonth = (mes === currentMonthName);
-      const profitOp = m.ingresos - m.gastosOp;
-      let projectedIng = null, projectedGastos = null, projectedProfit = null;
-      const fc = forecast[mes] || {};
-      if (isCurrentMonth && dayOfMonth <= 20) {
-        if (fc.ingProyectado > 0) {
-          projectedIng = Math.round(fc.ingProyectado);
-          projectedGastos = Math.round(fc.gastoProyectado || avgGastos);
-          projectedProfit = Math.round(fc.profitProyectado || (fc.ingProyectado - (fc.gastoProyectado || avgGastos)));
-        } else if (completedMonths > 0) {
-          projectedIng = Math.round(avgIng);
-          projectedGastos = Math.round(avgGastos);
-          projectedProfit = Math.round(avgIng - avgGastos);
-        }
-      }
-      let forecastProfit = null;
-      if (fc.profitProyectado > 0) {
-        forecastProfit = Math.round(fc.profitProyectado);
-      } else if (fc.ingProyectado > 0 && fc.gastoProyectado > 0) {
-        forecastProfit = Math.round(fc.ingProyectado - fc.gastoProyectado);
-      }
-      data.monthly.push({
-        mes: mes.substring(0,3),
-        mesFull: mes,
-        ingresos: Math.round(m.ingresos),
-        gastosOp: Math.round(m.gastosOp),
-        retiros: Math.round(m.retiros),
-        impuestos: Math.round(m.impuestos),
-        nomina: Math.round(m.nomina),
-        profitOp: Math.round(profitOp),
-        resultadoNeto: Math.round(profitOp - m.impuestos),
-        recurrente: Math.round(m.recurrente),
-        nuevo: Math.round(m.nuevo),
-        isPartial: isCurrentMonth,
-        projectedIng,
-        projectedGastos,
-        projectedProfit,
-        forecastProfit
-      });
-    }
-  });
-
-  // Income type
-  data.incomeByType = {
-    recurrente: Math.round(totalRecurrente),
-    nuevo: Math.round(totalNuevo),
-    pctRecurrente: totalIng > 0 ? ((totalRecurrente/totalIng)*100).toFixed(1) : 0,
-    pctNuevo: totalIng > 0 ? ((totalNuevo/totalIng)*100).toFixed(1) : 0
+  return{
+    t:{i:Math.round(tI),rec:Math.round(tRec),nvo:Math.round(tNuevo),gOp:Math.round(tGOp),nom:Math.round(tNom),ret:Math.round(tRet),imp:Math.round(tImp),pOp:Math.round(pOp),rNeto:Math.round(rNeto),margen:tI>0?(pOp/tI*100).toFixed(1):0,rNom:rNom.toFixed(1),rGOp:tI>0?(tGOp/tI*100).toFixed(1):0,mCon:mCon.length,topCli:topCli[0]||{name:'-',total:0},topCliPct:tI>0&&topCli[0]?(topCli[0].total/tI*100).toFixed(1):0,pctRec:tI>0?((tRec/tI)*100).toFixed(1):0},
+    mrr:{val:mrrEst,arr:mrrEst*12},monthly,alerts,iBC,eBC,topCli,
+    pay:{pp:payP,pt:payPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:payPM[m]||{}})),g:Math.round(payG)},
+    wit:{pp:witP,pt:witPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:witPM[m]||{}})),g:Math.round(witG)}
   };
-
-  // Category aggregation
-  const incCatMap = {}, expCatMap = {};
-  rows.forEach(r => {
-    const cat = r['Categoría'] || r['Categoria'] || 'Otro';
-    const monto = parseMonto(r['Monto MXN']);
-    if (r.Tipo === 'Ingreso') incCatMap[cat] = (incCatMap[cat] || 0) + monto;
-    else if (r.Tipo === 'Egreso' && !NON_OPERATING.includes(cat)) expCatMap[cat] = (expCatMap[cat] || 0) + monto;
-  });
-  data.incomeByCategory = Object.entries(incCatMap).sort((a,b) => b[1]-a[1]).map(([name, value]) => ({ name, value: Math.round(value), pct: totalIng > 0 ? ((value/totalIng)*100).toFixed(1) : 0 }));
-  data.expenseByCategory = Object.entries(expCatMap).sort((a,b) => b[1]-a[1]).map(([name, value]) => ({ name, value: Math.round(value), pct: totalGastosOp > 0 ? ((value/totalGastosOp)*100).toFixed(1) : 0 }));
-
-  // Top clients
-  const CLIENT_ALIASES = {
-    'Capital Park': 'Urbano Park',
-    'Encore': 'Urbano Park',
-    'Encore San Angel': 'Urbano Park',
-    'Capital Park + Encore': 'Urbano Park',
-    'Capital Park + Encore San Angel': 'Urbano Park'
-  };
-  function getBaseClientName(fullName) {
-    if (!fullName) return '';
-    let name = fullName.trim();
-    const separators = [' - ', ' 50%', ' Set Up', ' set up', ' Mensualidad', ' mensualidad', ' Pago ', ' pago ', ' saldo ', ' Saldo ', ' anticipo', ' Anticipo', ' 1era ', ' 2da ', ' 3era '];
-    let cutPoint = name.length;
-    const plusIdx = name.indexOf(' + ');
-    if (plusIdx > 0) {
-      const withPlus = name.substring(0, name.indexOf(' ', plusIdx + 3) > 0 ? name.indexOf(' ', plusIdx + 3) : name.length).trim();
-      if (CLIENT_ALIASES[withPlus]) return CLIENT_ALIASES[withPlus];
-      if (CLIENT_ALIASES[name.trim()]) return CLIENT_ALIASES[name.trim()];
-    }
-    separators.forEach(sep => {
-      const idx = name.indexOf(sep);
-      if (idx > 2 && idx < cutPoint) cutPoint = idx;
-    });
-    name = name.substring(0, cutPoint).trim();
-    name = name.replace(/\s+(Inicial|Set|Up|De|de)$/i, '').trim();
-    if (CLIENT_ALIASES[name]) return CLIENT_ALIASES[name];
-    return name;
-  }
-  const clientMap = {};
-  rows.filter(r => r.Tipo === 'Ingreso' && r.Cliente).forEach(r => {
-    const baseName = getBaseClientName(r.Cliente);
-    clientMap[baseName] = (clientMap[baseName] || 0) + (parseMonto(r['Monto MXN']));
-  });
-  data.topClients = Object.entries(clientMap).sort((a,b) => b[1]-a[1]).slice(0,10).map(([name, total]) => ({ name, total: Math.round(total) }));
-
-  // ============================================================
-  // Datos Nómina y Retiros por persona
-  // ============================================================
-  const monthsWithData = MESES_ORDER.filter(m => monthMap[m]);
-
-  const payrollPeople = Object.keys(payrollPersonTotal).sort((a,b) => payrollPersonTotal[b] - payrollPersonTotal[a]);
-  const withdrawalPeople = Object.keys(withdrawalPersonTotal).sort((a,b) => withdrawalPersonTotal[b] - withdrawalPersonTotal[a]);
-
-  const payrollGrand = Object.values(payrollPersonTotal).reduce((a,b) => a+b, 0);
-  const withdrawalGrand = Object.values(withdrawalPersonTotal).reduce((a,b) => a+b, 0);
-
-  data.payroll = {
-    people: payrollPeople,
-    totalsByPerson: payrollPersonTotal,
-    monthly: monthsWithData.map(m => ({
-      mes: m.substring(0,3),
-      mesFull: m,
-      values: payrollPersonMonth[m] || {},
-      total: Object.values(payrollPersonMonth[m] || {}).reduce((a,b) => a+b, 0)
-    })),
-    grandTotal: Math.round(payrollGrand)
-  };
-
-  data.withdrawals = {
-    people: withdrawalPeople,
-    totalsByPerson: withdrawalPersonTotal,
-    monthly: monthsWithData.map(m => ({
-      mes: m.substring(0,3),
-      mesFull: m,
-      values: withdrawalPersonMonth[m] || {},
-      total: Object.values(withdrawalPersonMonth[m] || {}).reduce((a,b) => a+b, 0)
-    })),
-    grandTotal: Math.round(withdrawalGrand)
-  };
-
-  const profitOp = totalIng - totalGastosOp;
-  const resultadoNeto = profitOp - totalImpuestos;
-  data.totals = {
-    ingresos: Math.round(totalIng),
-    gastosOp: Math.round(totalGastosOp),
-    totalEgresos: Math.round(totalEgresos),
-    retiros: Math.round(totalRetiros),
-    impuestos: Math.round(totalImpuestos),
-    nomina: Math.round(totalNomina),
-    profitOp: Math.round(profitOp),
-    resultadoNeto: Math.round(resultadoNeto),
-    margenOp: totalIng > 0 ? ((profitOp/totalIng)*100).toFixed(1) : 0,
-    margenNeto: totalIng > 0 ? ((resultadoNeto/totalIng)*100).toFixed(1) : 0,
-    transacciones: totalTx,
-    ratioGastos: totalIng > 0 ? ((totalGastosOp/totalIng)*100).toFixed(1) : 0,
-    numCategorias: Object.keys(incCatMap).length,
-    numMeses: Object.keys(monthMap).length,
-    topCliente: data.topClients[0] ? { name: data.topClients[0].name, pct: totalIng > 0 ? ((data.topClients[0].total/totalIng)*100).toFixed(1) : 0 } : { name: '-', pct: 0 }
-  };
-  return data;
 }
 
-// Construye el HTML de las tarjetitas por persona (leyenda con totales)
-function renderPersonLegend(people, totalsByPerson, grandTotal) {
-  if (!people.length) {
-    return '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No hay registros para mostrar.</div>';
-  }
-  return '<div class="person-grid">' + people.map((p, i) => {
-    const t = totalsByPerson[p] || 0;
-    const pct = grandTotal > 0 ? ((t/grandTotal)*100).toFixed(1) : 0;
-    const color = PERSON_COLORS[i % PERSON_COLORS.length];
-    return '<div class="person-card">' +
-      '<span class="person-dot" style="background:' + color + '"></span>' +
-      '<div class="person-info">' +
-        '<div class="person-name">' + p + '</div>' +
-        '<div class="person-total">' + fmt(t) + '</div>' +
-        '<div class="person-pct">' + pct + '% del total</div>' +
-      '</div>' +
-    '</div>';
-  }).join('') + '</div>';
-}
+function persLegend(pp,pt,g){if(!pp.length)return'<p style="color:var(--text-3);font-size:13px;padding:16px">Sin datos identificados.</p>';return'<div class="person-grid">'+pp.map((p,i)=>{const t=pt[p]||0;const pct=g>0?((t/g)*100).toFixed(1):0;return`<div class="person-card"><span class="person-dot" style="background:${PC[i%PC.length]}"></span><div><div class="person-name">${p}</div><div class="person-total">${fmt(t)}</div><div class="person-pct">${pct}%</div></div></div>`;}).join('')+'</div>';}
 
-function render(data) {
-  const d = data.totals;
-  const now = new Date();
-  document.getElementById('app').innerHTML = `
-    <div class="header">
-      <div>
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
-          <img class="logo-img" src="logo.png" alt="Trichter Consulting">
-          <h1 class="title">Finanzas Trichter 2026</h1>
-        </div>
-        <p class="subtitle">Dashboard financiero en tiempo real</p>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <span class="last-update">Actualizado: ${now.toLocaleString('es-MX')}</span>
-        <button class="refresh-btn" onclick="loadDashboard()">↻ Actualizar</button>
-      </div>
+function semBar(pct){const v=parseFloat(pct);const c=v>65?'#e04545':v>50?'#e08a45':'#3dbb7d';const tc=v>65?'#f08080':v>50?'#e0b070':'#6ddba0';return`<div class="sem"><div class="sem-bar"><div class="sem-fill" style="width:${Math.min(v,100).toFixed(1)}%;background:${c}"></div></div><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${tc}">${v.toFixed(0)}%</span></div>`;}
+
+function render(data){
+  const d=data.t;const now=new Date();
+  const rN=parseFloat(d.rNom);
+  const nCol=rN>65?'var(--red)':rN>50?'var(--orange)':'var(--green)';
+  const nBdg=rN>65?'br':rN>50?'ba':'bg';
+  const nTxt=rN>65?'CRÍTICO':rN>50?'ATENCIÓN':'SALUDABLE';
+  const pCol=d.pOp>=0?'var(--accent)':'var(--red)';
+  const ntCol=d.rNeto>=0?'var(--accent-light)':'var(--red)';
+
+  let h=`<div class="header">
+    <div class="header-left">
+      <img class="logo-img" src="logo.png" alt="TC" onerror="this.style.display='none'">
+      <div><div class="title">Finanzas — Trichter Consulting</div><div class="subtitle">Dashboard operativo 2026 · Tiempo real</div></div>
     </div>
-    <div class="kpi-grid">
-      <div class="kpi" style="border-color:var(--green-dim);background:linear-gradient(135deg,var(--card),#3dbb7d08)">
-        <div class="kpi-icon">$</div>
-        <div class="kpi-label">Ingresos Totales</div>
-        <div class="kpi-value" style="color:var(--green)">${fmt(d.ingresos)}</div>
-        <div class="kpi-sub">${d.numMeses} meses con datos</div>
-      </div>
-      <div class="kpi" style="border-color:var(--red-dim);background:linear-gradient(135deg,var(--card),#e0454508)">
-        <div class="kpi-icon">$</div>
-        <div class="kpi-label">Gastos Operativos</div>
-        <div class="kpi-value" style="color:var(--red)">${fmt(d.gastosOp)}</div>
-        <div class="kpi-sub">${d.ratioGastos}% de ingresos</div>
-      </div>
-      <div class="kpi" style="border-color:var(--accent-dim);background:linear-gradient(135deg,var(--card),#c59b3f08)">
-        <div class="kpi-icon">$</div>
-        <div class="kpi-label">Profit Operativo</div>
-        <div class="kpi-value" style="color:var(--accent)">${fmt(d.profitOp)}</div>
-        <div class="kpi-sub">Margen ${d.margenOp}%</div>
-      </div>
-      <div class="kpi" style="border-color:var(--accent-dim);background:linear-gradient(135deg,var(--card),#c59b3f06)">
-        <div class="kpi-icon">$</div>
-        <div class="kpi-label">Resultado Neto</div>
-        <div class="kpi-value" style="color:${d.resultadoNeto >= 0 ? 'var(--accent-light)' : 'var(--red)'}">${fmt(d.resultadoNeto)}</div>
-        <div class="kpi-sub">Después de impuestos</div>
-      </div>
+    <div class="header-right">
+      <a href="ventas/" class="btn btn-ghost">Pipeline de Ventas →</a>
+      <span class="last-update">${now.toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+      <button class="btn btn-accent" onclick="loadDashboard()">↻ Actualizar</button>
     </div>
-    <div id="secondaryKpis"></div>
-    <div class="section-title"><span style="font-size:22px">📊</span><h2>Ingresos vs Gastos por Mes</h2><div class="line"></div></div>
-    <div class="chart-card"><canvas id="barChart" height="140"></canvas></div>
-    <div class="section-title"><span style="font-size:22px">📈</span><h2>Tendencia de Profit</h2><div class="line"></div></div>
-    <div class="chart-card"><canvas id="profitChart" height="100"></canvas></div>
-    <div class="section-title"><span style="font-size:22px">🔄</span><h2>Ingresos: Recurrente vs Nuevo</h2><div class="line"></div></div>
+  </div>`;
+
+  data.alerts.forEach(a=>{h+=`<div class="alert-banner ${a.t}"><div class="alert-dot ${a.t}"></div><span>${a.m}</span></div>`;});
+
+  // KPIs principales
+  h+=`<div class="kpi-grid">
+    <div class="kpi kpi-g"><div class="kpi-label">Ingresos YTD</div><div class="kpi-value" style="color:var(--green)">${fmt(d.i)}</div><div class="kpi-sub">${fu(d.i/USD_RATE)} · ${d.mCon} meses</div></div>
+    <div class="kpi kpi-r"><div class="kpi-label">Gastos Operativos YTD</div><div class="kpi-value" style="color:var(--red)">${fmt(d.gOp)}</div><div class="kpi-sub"><span class="badge ${parseFloat(d.rGOp)<60?'ba':'br'}">${d.rGOp}% ingresos</span></div></div>
+    <div class="kpi kpi-a"><div class="kpi-label">Profit Operativo YTD</div><div class="kpi-value" style="color:${pCol}">${fmt(d.pOp)}</div><div class="kpi-sub"><span class="badge ${d.pOp>=0?'bg':'br'}">Margen ${d.margen}%</span></div></div>
+    <div class="kpi kpi-a"><div class="kpi-label">Resultado Neto YTD</div><div class="kpi-value" style="color:${ntCol}">${fmt(d.rNeto)}</div><div class="kpi-sub">${fu(d.rNeto/USD_RATE)} · post impuestos</div></div>
+  </div>`;
+
+  // MRR / Recurrente / Nómina %
+  h+=`<div class="mrr-grid">
+    <div class="mrr-card mrr-hl">
+      <div class="kpi-label">MRR Estimado</div>
+      <div class="kpi-value" style="color:var(--accent);font-size:26px">${fmt(data.mrr.val)}</div>
+      <div class="kpi-sub" style="margin-top:6px"><span class="badge bx">ARR ${fmt(data.mrr.arr)}</span></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;font-family:'JetBrains Mono',monospace">Prom. recurrente últimos 2 meses</div>
+    </div>
+    <div class="mrr-card">
+      <div class="kpi-label">Recurrente YTD</div>
+      <div class="kpi-value" style="color:var(--accent-light);font-size:26px">${fmt(d.rec)}</div>
+      <div class="kpi-sub" style="margin-top:6px"><span class="badge bx">${d.pctRec}% del total</span></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;font-family:'JetBrains Mono',monospace">Software + mensualidades garantizadas</div>
+    </div>
+    <div class="mrr-card">
+      <div class="kpi-label">One-Shot / Nuevos YTD</div>
+      <div class="kpi-value" style="color:var(--blue);font-size:26px">${fmt(d.nvo)}</div>
+      <div class="kpi-sub" style="margin-top:6px"><span class="badge bb">${(100-parseFloat(d.pctRec)).toFixed(1)}% del total</span></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;font-family:'JetBrains Mono',monospace">Set-ups, consultorías, cierres nuevos</div>
+    </div>
+    <div class="mrr-card">
+      <div class="kpi-label">Nómina / Ingresos</div>
+      <div class="kpi-value" style="color:${nCol};font-size:26px">${d.rNom}%</div>
+      ${semBar(d.rNom)}
+      <div class="kpi-sub"><span class="badge ${nBdg}">${nTxt}</span> · target &lt;50%</div>
+    </div>
+  </div>`;
+
+  // P&L
+  h+=`<div class="section-title"><h2>Estado de Resultados</h2><span class="badge bx" style="margin-left:4px">P&amp;L</span><div class="line"></div></div>
+  <div class="two-col">
     <div class="chart-card">
-      <canvas id="incomeTypeChart" height="100"></canvas>
-      <div id="incomeTypeSummary" style="margin-top:16px"></div>
+      <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:4px">P&amp;L Operativo</div>
+      <div class="chart-sub">Cómo opera la agencia — sin distribuciones ni fiscal</div>
+      <table class="pnl-t">
+        <tr class="pnl-div"><td colspan="2">Ingresos</td></tr>
+        <tr><td class="pl">Recurrente (Software + Mensualidades)</td><td class="pv" style="color:var(--accent)">${fmt(d.rec)}</td></tr>
+        <tr><td class="pl">One-Shot / Nuevos clientes</td><td class="pv" style="color:var(--blue)">${fmt(d.nvo)}</td></tr>
+        <tr class="pnl-tot"><td class="pl" style="color:var(--green)">TOTAL INGRESOS</td><td class="pv" style="color:var(--green)">${fmt(d.i)}</td></tr>
+        <tr class="pnl-div"><td colspan="2">Egresos Operativos</td></tr>
+        <tr><td class="pl">Nómina y honorarios equipo</td><td class="pv" style="color:var(--red)">(${fmt(d.nom)})</td></tr>
+        <tr><td class="pl">Otros gastos operativos</td><td class="pv" style="color:var(--red)">(${fmt(d.gOp-d.nom)})</td></tr>
+        <tr class="pnl-tot"><td class="pl" style="color:var(--red)">TOTAL EGRESOS OP.</td><td class="pv" style="color:var(--red)">(${fmt(d.gOp)})</td></tr>
+        <tr class="pnl-tot"><td class="pl" style="color:var(--accent);font-size:13px">PROFIT OPERATIVO</td><td class="pv" style="color:${pCol};font-size:15px">${fmt(d.pOp)} <span style="font-size:11px">(${d.margen}%)</span></td></tr>
+      </table>
     </div>
-
-    <div class="section-title"><span style="font-size:22px">👥</span><h2>Nómina por Persona (mes a mes)</h2><div class="line"></div></div>
     <div class="chart-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:13px;color:var(--text-2)">Egresos categoría <strong>Nómina</strong>, persona detectada en columna Notas.</div>
-        <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-light)">Total: ${fmt(data.payroll.grandTotal)}</div>
-      </div>
-      <canvas id="payrollChart" height="120"></canvas>
-      <div id="payrollLegend" style="margin-top:16px"></div>
-    </div>
-
-    <div class="section-title"><span style="font-size:22px">🤝</span><h2>Retiros de Socios por Persona (mes a mes)</h2><div class="line"></div></div>
-    <div class="chart-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:13px;color:var(--text-2)">Egresos categoría <strong>Retiro Socio</strong>, persona detectada en columna Notas.</div>
-        <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--purple)">Total: ${fmt(data.withdrawals.grandTotal)}</div>
-      </div>
-      <canvas id="withdrawalChart" height="120"></canvas>
-      <div id="withdrawalLegend" style="margin-top:16px"></div>
-    </div>
-
-    <div class="section-title"><span style="font-size:22px">📂</span><h2>Desglose por Categorías</h2><div class="line"></div></div>
-    <div class="two-col">
-      <div class="chart-card">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px"><span style="font-size:18px">💰</span><h3 style="font-size:17px;font-weight:700;font-family:'Poppins',sans-serif">Ingresos</h3></div>
-        <canvas id="incomePie" height="180"></canvas>
-        <div id="incomeLegend" style="margin-top:16px"></div>
-      </div>
-      <div class="chart-card">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px"><span style="font-size:18px">💸</span><h3 style="font-size:17px;font-weight:700;font-family:'Poppins',sans-serif">Gastos</h3></div>
-        <canvas id="expensePie" height="180"></canvas>
-        <div id="expenseLegend" style="margin-top:16px"></div>
+      <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:4px">Distribución de flujo</div>
+      <div class="chart-sub">Qué pasó con todo el dinero — operativo + distribuciones + fiscal</div>
+      <table class="pnl-t">
+        <tr class="pnl-div"><td colspan="2">Del Profit Operativo</td></tr>
+        <tr><td class="pl">Profit Operativo</td><td class="pv" style="color:${pCol}">${fmt(d.pOp)}</td></tr>
+        <tr class="pnl-div"><td colspan="2">Distribuciones &amp; Fiscal</td></tr>
+        <tr><td class="pl">Retiros de socios</td><td class="pv" style="color:var(--purple)">(${fmt(d.ret)})</td></tr>
+        <tr><td class="pl">Impuestos pagados</td><td class="pv" style="color:var(--orange)">(${fmt(d.imp)})</td></tr>
+        <tr class="pnl-tot"><td class="pl" style="color:var(--accent-light)">RESULTADO NETO</td><td class="pv" style="color:${ntCol};font-size:15px">${fmt(d.rNeto)}</td></tr>
+      </table>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Distribución del ingreso total</div>
+        ${[[d.gOp,'Gastos Operativos','var(--red)'],[d.ret,'Retiros Socios','var(--purple)'],[d.imp,'Impuestos','var(--orange)']].map(([v,label,color])=>{const p=d.i>0?(v/d.i*100).toFixed(0):0;return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><div style="font-size:12px;color:var(--text-2);width:160px">${label}</div><div style="flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${Math.min(p,100)}%;height:100%;background:${color};border-radius:3px"></div></div><div style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;width:28px;text-align:right">${p}%</div></div>`;}).join('')}
       </div>
     </div>
-    <div class="section-title"><span style="font-size:22px">🏢</span><h2>Top Clientes por Facturación</h2><div class="line"></div></div>
-    <div class="chart-card" id="clientsSection"></div>
-    <div class="section-title"><span style="font-size:22px">🩺</span><h2>Indicadores de Salud Financiera</h2><div class="line"></div></div>
-    <div class="health-grid">
-      <div class="health-card">
-        <div class="health-label">Ratio Gastos/Ingresos</div>
-        <div class="health-value" style="color:${parseFloat(d.ratioGastos) < 40 ? 'var(--accent)' : parseFloat(d.ratioGastos) < 60 ? 'var(--gold)' : 'var(--red)'}">${d.ratioGastos}%</div>
-        <div class="health-desc">Solo gastos operativos</div>
-      </div>
-      <div class="health-card">
-        <div class="health-label">Top Cliente</div>
-        <div class="health-value" style="color:${parseFloat(d.topCliente.pct) < 30 ? 'var(--blue)' : 'var(--gold)'}">${d.topCliente.pct}%</div>
-        <div class="health-desc">${d.topCliente.name}</div>
-      </div>
-      <div class="health-card">
-        <div class="health-label">Diversificación</div>
-        <div class="health-value" style="color:${d.numCategorias >= 6 ? 'var(--accent)' : d.numCategorias >= 4 ? 'var(--gold)' : 'var(--red)'}">${d.numCategorias} categorías</div>
-        <div class="health-desc">Meta: 6+</div>
-      </div>
-      <div class="health-card">
-        <div class="health-label">Meses con Data</div>
-        <div class="health-value" style="color:var(--text-1)">${d.numMeses} de 12</div>
-        <div class="health-desc">${d.numMeses >= 3 ? 'Q' + Math.ceil(d.numMeses/3) + ' completo' : 'En progreso'}</div>
-      </div>
-    </div>
-    <div class="footer"><p>Trichter Consulting · Dashboard Financiero · Datos en tiempo real</p></div>
-  `;
+  </div>`;
 
-  // Secondary KPIs (incluye ahora Nómina Total)
-  if (d.retiros > 0 || d.impuestos > 0 || d.nomina > 0) {
-    document.getElementById('secondaryKpis').innerHTML =
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:32px">' +
-        '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
-          '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Nómina Total</div>' +
-          '<div style="font-size:22px;font-weight:700;color:var(--blue);font-family:\'Poppins\',sans-serif">' + fmt(d.nomina) + '</div>' +
-          '<div style="font-size:11px;color:var(--text-3);margin-top:2px">Sueldos a equipo</div>' +
-        '</div>' +
-        '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
-          '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Retiros Socios</div>' +
-          '<div style="font-size:22px;font-weight:700;color:var(--purple);font-family:\'Poppins\',sans-serif">' + fmt(d.retiros) + '</div>' +
-          '<div style="font-size:11px;color:var(--text-3);margin-top:2px">Distribución de utilidades</div>' +
-        '</div>' +
-        '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
-          '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Impuestos</div>' +
-          '<div style="font-size:22px;font-weight:700;color:var(--gold);font-family:\'Poppins\',sans-serif">' + fmt(d.impuestos) + '</div>' +
-          '<div style="font-size:11px;color:var(--text-3);margin-top:2px">Obligaciones fiscales</div>' +
-        '</div>' +
-        '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
-          '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Total Egresos</div>' +
-          '<div style="font-size:22px;font-weight:700;color:var(--text-2);font-family:\'Poppins\',sans-serif">' + fmt(d.totalEgresos) + '</div>' +
-          '<div style="font-size:11px;color:var(--text-3);margin-top:2px">Operativos + retiros + imp.</div>' +
-        '</div>' +
-        '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px">' +
-          '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">Transacciones</div>' +
-          '<div style="font-size:22px;font-weight:700;color:var(--text-1);font-family:\'Poppins\',sans-serif">' + d.transacciones + '</div>' +
-          '<div style="font-size:11px;color:var(--text-3);margin-top:2px">Movimientos registrados</div>' +
-        '</div>' +
-      '</div>';
-  }
-
-  // ============================================================
   // Charts
-  // ============================================================
-  Chart.defaults.color = '#8a8070';
-  Chart.defaults.borderColor = '#1f1d1a';
-  Chart.defaults.font.family = "'JetBrains Mono', monospace";
+  h+=`<div class="section-title"><h2>Ingresos vs Gastos Operativos</h2><div class="line"></div></div>
+  <div class="chart-card"><canvas id="barChart" height="140"></canvas></div>
+  <div class="section-title"><h2>MRR vs One-Shot por Mes</h2><span class="badge bx" style="margin-left:4px">NUEVO</span><div class="line"></div></div>
+  <div class="chart-card"><div class="chart-sub">Recurrente = base garantizada · One-Shot = adquisición y proyectos nuevos</div><canvas id="mrrChart" height="110"></canvas></div>
+  <div class="section-title"><h2>Profit Operativo + Forecast</h2><div class="line"></div></div>
+  <div class="chart-card"><canvas id="profitChart" height="100"></canvas></div>
+  <div class="section-title"><h2>% Nómina sobre Ingresos</h2><span class="badge br" style="margin-left:4px">SEMÁFORO</span><div class="line"></div></div>
+  <div class="chart-card"><div class="chart-sub">Verde &lt;50% · Ámbar 50–65% · Rojo &gt;65% · Target: mantener bajo el 50%</div><canvas id="nomRatioChart" height="90"></canvas></div>`;
 
-  // Bar Chart - Ingresos vs Gastos
-  const barIngData = data.monthly.map(m => m.isPartial && m.projectedIng ? m.projectedIng : m.ingresos);
-  const barGastosData = data.monthly.map(m => m.isPartial && m.projectedGastos ? m.projectedGastos : m.gastosOp);
-  const barIngColors = data.monthly.map(m => m.isPartial && m.projectedIng ? '#3dbb7d55' : '#3dbb7d');
-  const barGastosColors = data.monthly.map(m => m.isPartial && m.projectedGastos ? '#e0454555' : '#e04545');
-  const barIngBorders = data.monthly.map(m => m.isPartial && m.projectedIng ? '#3dbb7d' : 'transparent');
-  const barGastosBorders = data.monthly.map(m => m.isPartial && m.projectedGastos ? '#e04545' : 'transparent');
-  const barLabels = data.monthly.map(m => m.isPartial ? m.mes + ' (proy.)' : m.mes);
-  new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: {
-      labels: barLabels,
-      datasets: [
-        { label: 'Ingresos', data: barIngData, backgroundColor: barIngColors, borderColor: barIngBorders, borderWidth: 2, borderRadius: 6 },
-        { label: 'Gastos Op.', data: barGastosData, backgroundColor: barGastosColors, borderColor: barGastosBorders, borderWidth: 2, borderRadius: 6 }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { font: { family: "'Poppins'" } } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } } } }
-  });
-
-  // Profit Area Chart with forecast
-  const profitData = data.monthly.map(m => m.isPartial && m.projectedProfit !== null ? m.projectedProfit : m.profitOp);
-  const forecastData = data.monthly.map(m => m.forecastProfit);
-  const hasForecast = forecastData.some(v => v !== null && v > 0);
-  const profitPointStyles = data.monthly.map(m => m.isPartial ? 'rectRot' : 'circle');
-  const profitPointRadius = data.monthly.map(m => m.isPartial ? 7 : 5);
-  var profitDatasets = [
-    { label: 'Profit Real', data: profitData, borderColor: '#c59b3f', backgroundColor: '#c59b3f22', fill: true, tension: 0.3, pointRadius: profitPointRadius, pointStyle: profitPointStyles, pointBackgroundColor: '#c59b3f', borderWidth: 3, segment: { borderDash: function(ctx) { return data.monthly[ctx.p1DataIndex] && data.monthly[ctx.p1DataIndex].isPartial ? [6,3] : undefined; } } }
-  ];
-  if (hasForecast) {
-    profitDatasets.push({ label: 'Profit Proyectado (Forecast)', data: forecastData, borderColor: '#5a9fd4', backgroundColor: '#5a9fd411', fill: false, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#5a9fd4', borderWidth: 2, borderDash: [6,4] });
-  }
-  new Chart(document.getElementById('profitChart'), {
-    type: 'line',
-    data: { labels: barLabels, datasets: profitDatasets },
-    options: { responsive: true, plugins: { legend: { labels: { font: { family: "'Poppins'" } } } }, scales: { y: { ticks: { callback: v => fmt(v) } } } }
-  });
-
-  // Income Type Chart
-  new Chart(document.getElementById('incomeTypeChart'), {
-    type: 'bar',
-    data: {
-      labels: data.monthly.map(m => m.mes),
-      datasets: [
-        { label: 'Recurrente', data: data.monthly.map(m => m.recurrente), backgroundColor: '#c59b3f', borderRadius: 6 },
-        { label: 'Nuevo', data: data.monthly.map(m => m.nuevo), backgroundColor: '#5a9fd4', borderRadius: 6 }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { font: { family: "'Poppins'" } } } }, scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } } } }
-  });
-
-  var iType = data.incomeByType;
-  document.getElementById('incomeTypeSummary').innerHTML =
-    '<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center">' +
-      '<div style="text-align:center">' +
-        '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace">Recurrente</div>' +
-        '<div style="font-size:24px;font-weight:700;color:#c59b3f;font-family:\'Poppins\',sans-serif">' + fmt(iType.recurrente) + '</div>' +
-        '<div style="font-size:12px;color:var(--text-3)">' + iType.pctRecurrente + '% del total</div>' +
-      '</div>' +
-      '<div style="text-align:center">' +
-        '<div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-family:\'JetBrains Mono\',monospace">Nuevo</div>' +
-        '<div style="font-size:24px;font-weight:700;color:#5a9fd4;font-family:\'Poppins\',sans-serif">' + fmt(iType.nuevo) + '</div>' +
-        '<div style="font-size:12px;color:var(--text-3)">' + iType.pctNuevo + '% del total</div>' +
-      '</div>' +
-    '</div>';
-
-  // ============================================================
-  // Nómina por persona (stacked bar)
-  // ============================================================
-  const payroll = data.payroll;
-  const payrollLabels = payroll.monthly.map(m => m.mes);
-  const payrollDatasets = payroll.people.map((person, i) => ({
-    label: person,
-    data: payroll.monthly.map(m => Math.round(m.values[person] || 0)),
-    backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length],
-    borderRadius: 6,
-    borderWidth: 0
-  }));
-  new Chart(document.getElementById('payrollChart'), {
-    type: 'bar',
-    data: { labels: payrollLabels, datasets: payrollDatasets.length ? payrollDatasets : [{ label: 'Sin datos', data: payrollLabels.map(() => 0), backgroundColor: '#333' }] },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { font: { family: "'Poppins'" } } },
-        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) } }
-      },
-      scales: {
-        x: { stacked: true, grid: { display: false } },
-        y: { stacked: true, ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } }
-      }
-    }
-  });
-  document.getElementById('payrollLegend').innerHTML = renderPersonLegend(payroll.people, payroll.totalsByPerson, payroll.grandTotal);
-
-  // ============================================================
-  // Retiros de socios por persona (stacked bar)
-  // ============================================================
-  const withdr = data.withdrawals;
-  const withdrLabels = withdr.monthly.map(m => m.mes);
-  const withdrDatasets = withdr.people.map((person, i) => ({
-    label: person,
-    data: withdr.monthly.map(m => Math.round(m.values[person] || 0)),
-    backgroundColor: PERSON_COLORS[i % PERSON_COLORS.length],
-    borderRadius: 6,
-    borderWidth: 0
-  }));
-  new Chart(document.getElementById('withdrawalChart'), {
-    type: 'bar',
-    data: { labels: withdrLabels, datasets: withdrDatasets.length ? withdrDatasets : [{ label: 'Sin datos', data: withdrLabels.map(() => 0), backgroundColor: '#333' }] },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { font: { family: "'Poppins'" } } },
-        tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) } }
-      },
-      scales: {
-        x: { stacked: true, grid: { display: false } },
-        y: { stacked: true, ticks: { callback: v => fmt(v) }, grid: { color: '#1f1d1a33' } }
-      }
-    }
-  });
-  document.getElementById('withdrawalLegend').innerHTML = renderPersonLegend(withdr.people, withdr.totalsByPerson, withdr.grandTotal);
-
-  // Income Pie
-  new Chart(document.getElementById('incomePie'), {
-    type: 'doughnut',
-    data: { labels: data.incomeByCategory.map(c => c.name), datasets: [{ data: data.incomeByCategory.map(c => c.value), backgroundColor: COLORS.slice(0, data.incomeByCategory.length), borderWidth: 0 }] },
-    options: { responsive: true, cutout: '60%', plugins: { legend: { display: false } } }
-  });
-  document.getElementById('incomeLegend').innerHTML = data.incomeByCategory.map((c,i) => `<div class="cat-item"><div style="display:flex;align-items:center"><div class="cat-dot" style="background:${COLORS[i]}"></div><span class="cat-name">${c.name}</span></div><div style="display:flex;align-items:center"><span class="cat-value">${fmt(c.value)}</span><span class="cat-pct">${c.pct}%</span></div></div>`).join('');
-
-  // Expense Pie
-  const expColors = ['#e04545','#d46a5a','#9b7fd4','#5a9fd4','#e0a56a','#7eb89e','#c5763f','#8a7060'];
-  new Chart(document.getElementById('expensePie'), {
-    type: 'doughnut',
-    data: { labels: data.expenseByCategory.map(c => c.name), datasets: [{ data: data.expenseByCategory.map(c => c.value), backgroundColor: expColors.slice(0, data.expenseByCategory.length), borderWidth: 0 }] },
-    options: { responsive: true, cutout: '60%', plugins: { legend: { display: false } } }
-  });
-  document.getElementById('expenseLegend').innerHTML = data.expenseByCategory.map((c,i) => `<div class="cat-item"><div style="display:flex;align-items:center"><div class="cat-dot" style="background:${expColors[i]}"></div><span class="cat-name">${c.name}</span></div><div style="display:flex;align-items:center"><span class="cat-value">${fmt(c.value)}</span><span class="cat-pct">${c.pct}%</span></div></div>`).join('');
-
-  // Clients
-  const maxClient = data.topClients[0] ? data.topClients[0].total : 1;
-  document.getElementById('clientsSection').innerHTML = data.topClients.map((c,i) => `
-    <div class="client-row">
-      <span class="client-rank">${i+1}</span>
-      <div class="client-info">
-        <div class="client-header"><span class="client-name">${c.name}</span><span class="client-total">${fmt(c.total)} MXN</span></div>
-        <div class="client-bar"><div class="client-bar-fill" style="width:${(c.total/maxClient*100)}%;background:linear-gradient(90deg,${COLORS[i]},${COLORS[i]}88)"></div></div>
-      </div>
+  // Payroll
+  h+=`<div class="section-title"><h2>Nómina por Persona</h2><div class="line"></div></div>
+  <div class="chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="chart-sub" style="margin:0">Costo de nómina por integrante</div>
+      <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent-light)">Total: ${fmt(data.pay.g)}</div>
     </div>
-  `).join('');
+    <canvas id="payrollChart" height="110"></canvas>
+    <div id="payrollLegend" style="margin-top:14px"></div>
+  </div>
+  <div class="section-title"><h2>Retiros de Socios</h2><div class="line"></div></div>
+  <div class="chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="chart-sub" style="margin:0">Distribuciones — fuera del P&L operativo</div>
+      <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--purple)">Total: ${fmt(data.wit.g)}</div>
+    </div>
+    <canvas id="witChart" height="80"></canvas>
+    <div id="witLegend" style="margin-top:14px"></div>
+  </div>`;
+
+  // Categorías
+  h+=`<div class="section-title"><h2>Desglose por Categorías</h2><div class="line"></div></div>
+  <div class="two-col">
+    <div class="chart-card"><div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:14px">Ingresos</div><canvas id="incomePie" height="180"></canvas><div id="incomeLegend" style="margin-top:14px"></div></div>
+    <div class="chart-card"><div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:14px">Gastos Operativos</div><canvas id="expensePie" height="180"></canvas><div id="expenseLegend" style="margin-top:14px"></div></div>
+  </div>`;
+
+  // Top Clientes
+  const maxC=data.topCli[0]?.total||1;
+  h+=`<div class="section-title"><h2>Top Clientes por Facturación</h2><div class="line"></div></div>
+  <div class="chart-card">${data.topCli.map((c,i)=>{const pW=(c.total/maxC*100).toFixed(1);const pT=d.i>0?(c.total/d.i*100).toFixed(1):0;return`<div class="cli-row"><div class="cli-hdr"><span style="font-size:10px;color:var(--text-3);font-family:'JetBrains Mono',monospace;flex-shrink:0">${String(i+1).padStart(2,'0')}</span><span class="cli-name">${c.name}</span><span class="cli-total">${fmt(c.total)}</span></div><div class="cli-bar"><div class="cli-fill" style="width:${pW}%;background:linear-gradient(90deg,${COLORS[i]},${COLORS[i]}88)"></div></div><div class="cli-meta">${pT}% del ingreso total · ${fu(c.total/USD_RATE)}</div></div>`;}).join('')}</div>`;
+
+  // Health
+  const rNv=parseFloat(d.rNom),topP=parseFloat(d.topCliPct);
+  h+=`<div class="section-title"><h2>Indicadores de Salud Financiera</h2><div class="line"></div></div>
+  <div class="health-grid">
+    <div class="health-card"><div class="health-label">Nómina / Ingresos</div><div class="health-value" style="color:${rNv>65?'var(--red)':rNv>50?'var(--orange)':'var(--green)'}">${d.rNom}%</div><div class="health-desc">${rNv>65?'⚠ Crítico — revisar estructura':rNv>50?'Zona de atención':'Saludable'} · target &lt;50%</div></div>
+    <div class="health-card"><div class="health-label">Gastos Op. / Ingresos</div><div class="health-value" style="color:${parseFloat(d.rGOp)<65?'var(--accent)':parseFloat(d.rGOp)<80?'var(--orange)':'var(--red)'}">${d.rGOp}%</div><div class="health-desc">Margen operativo ${d.margen}%</div></div>
+    <div class="health-card"><div class="health-label">Concentración de Clientes</div><div class="health-value" style="color:${topP>40?'var(--orange)':topP>30?'var(--accent)':'var(--green)'}">${d.topCliPct}%</div><div class="health-desc">${d.topCli.name} · ${topP>40?'riesgo alto':'riesgo moderado'}</div></div>
+    <div class="health-card"><div class="health-label">Retiros vs Profit Op.</div><div class="health-value" style="color:${d.ret>d.pOp?'var(--red)':'var(--green)'}">${d.pOp>0?(d.ret/d.pOp*100).toFixed(0):0}%</div><div class="health-desc">${d.ret>d.pOp?'⚠ Retiros > profit':'En línea con profit'}</div></div>
+    <div class="health-card"><div class="health-label">% Ingresos Recurrentes</div><div class="health-value" style="color:${parseFloat(d.pctRec)>50?'var(--green)':parseFloat(d.pctRec)>30?'var(--accent)':'var(--red)'}">${d.pctRec}%</div><div class="health-desc">Meta: &gt;60% para predecibilidad</div></div>
+    <div class="health-card"><div class="health-label">Meses Registrados</div><div class="health-value" style="color:var(--text-1)">${d.mCon} / 12</div><div class="health-desc">${d.mCon>=3?'Q'+Math.ceil(d.mCon/3)+' en curso':'Datos en progreso'}</div></div>
+  </div>
+  <div class="footer"><p>Trichter Consulting · Dashboard Financiero 2026 · Datos desde Google Sheets · Auto-refresh 5min</p></div>`;
+
+  document.getElementById('app').innerHTML=h;
+
+  // ── CHARTS ──
+  Chart.defaults.color='#5a5348';Chart.defaults.borderColor='#1f1d1a33';Chart.defaults.font.family="'JetBrains Mono',monospace";Chart.defaults.font.size=11;
+  const bL=data.monthly.map(m=>m.isP?m.mes+'*':m.mes);
+
+  new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Ingresos',data:data.monthly.map(m=>m.i),backgroundColor:data.monthly.map(m=>m.isP?'#3dbb7d55':'#3dbb7d'),borderRadius:5,barPercentage:0.75},{label:'Gastos Op.',data:data.monthly.map(m=>m.gOp),backgroundColor:data.monthly.map(m=>m.isP?'#e0454555':'#e04545'),borderRadius:5,barPercentage:0.75}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
+
+  new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
+
+  const hasF=data.monthly.some(m=>m.fI);
+  const pDS=[{label:'Profit Operativo',data:data.monthly.map(m=>m.pOp),borderColor:'#c59b3f',backgroundColor:'#c59b3f18',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#c59b3f',borderWidth:3}];
+  if(hasF)pDS.push({label:'Forecast',data:data.monthly.map(m=>m.fI&&m.fG?m.fI-m.fG:null),borderColor:'#5a9fd4',fill:false,tension:0.3,borderDash:[6,4],pointRadius:4,borderWidth:2});
+  new Chart(document.getElementById('profitChart'),{type:'line',data:{labels:bL,datasets:pDS},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
+
+  new Chart(document.getElementById('nomRatioChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Nómina / Ingresos %',data:data.monthly.map(m=>parseFloat(m.rNom.toFixed(1))),backgroundColor:data.monthly.map(m=>m.rNom>65?'#e04545':m.rNom>50?'#e08a45':'#3dbb7d'),borderRadius:5,barPercentage:0.65}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)}% de ingresos`}}},scales:{y:{min:0,suggestedMax:100,ticks:{callback:v=>v+'%'},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
+
+  const pyL=data.pay.pm.map(m=>m.mes);const pyDS=data.pay.pp.map((p,i)=>({label:p,data:data.pay.pm.map(m=>Math.round(m.v[p]||0)),backgroundColor:PC[i%PC.length],borderRadius:4}));
+  new Chart(document.getElementById('payrollChart'),{type:'bar',data:{labels:pyL,datasets:pyDS.length?pyDS:[{label:'Sin datos',data:pyL.map(()=>0),backgroundColor:'#333'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:11},boxWidth:10,padding:12}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
+  document.getElementById('payrollLegend').innerHTML=persLegend(data.pay.pp,data.pay.pt,data.pay.g);
+
+  const wL=data.wit.pm.map(m=>m.mes);const wDS=data.wit.pp.map((p,i)=>({label:p,data:data.wit.pm.map(m=>Math.round(m.v[p]||0)),backgroundColor:PC[i%PC.length],borderRadius:4}));
+  new Chart(document.getElementById('witChart'),{type:'bar',data:{labels:wL,datasets:wDS.length?wDS:[{label:'Sin datos',data:wL.map(()=>0),backgroundColor:'#333'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:11},boxWidth:10,padding:12}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
+  document.getElementById('witLegend').innerHTML=persLegend(data.wit.pp,data.wit.pt,data.wit.g);
+
+  new Chart(document.getElementById('incomePie'),{type:'doughnut',data:{labels:data.iBC.map(c=>c.name),datasets:[{data:data.iBC.map(c=>c.value),backgroundColor:COLORS.slice(0,data.iBC.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,cutout:'62%',plugins:{legend:{display:false}}}});
+  document.getElementById('incomeLegend').innerHTML=data.iBC.map((c,i)=>`<div class="cat-item"><div style="display:flex;align-items:center"><div class="cat-dot" style="background:${COLORS[i]}"></div><span class="cat-name">${c.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="cat-v">${fmt(c.value)}</span><span class="cat-p">${c.pct}%</span></div></div>`).join('');
+
+  const eC=['#e04545','#d46a5a','#9b7fd4','#5a9fd4','#e08a45','#7eb89e','#c5763f','#8a7060'];
+  new Chart(document.getElementById('expensePie'),{type:'doughnut',data:{labels:data.eBC.map(c=>c.name),datasets:[{data:data.eBC.map(c=>c.value),backgroundColor:eC.slice(0,data.eBC.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,cutout:'62%',plugins:{legend:{display:false}}}});
+  document.getElementById('expenseLegend').innerHTML=data.eBC.map((c,i)=>`<div class="cat-item"><div style="display:flex;align-items:center"><div class="cat-dot" style="background:${eC[i]}"></div><span class="cat-name">${c.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="cat-v">${fmt(c.value)}</span><span class="cat-p">${c.pct}%</span></div></div>`).join('');
 }
 
-async function loadDashboard() {
-  try {
-    document.getElementById('app').innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Cargando datos de Google Sheets...</p></div>';
-    const [rows, forecast] = await Promise.all([fetchSheetData(), fetchForecastData()]);
-    const data = processData(rows, forecast);
-    render(data);
-  } catch (err) {
-    document.getElementById('app').innerHTML = `<div class="loading"><p style="color:var(--red)">Error cargando datos: ${err.message}</p><p style="margin-top:12px;color:var(--text-2)">Verificá que la planilla esté compartida como "Cualquiera con el enlace puede ver"</p><button class="refresh-btn" style="margin-top:16px" onclick="loadDashboard()">Reintentar</button></div>`;
-  }
+async function loadDashboard(){
+  document.getElementById('app').innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>';
+  try{
+    const[rows,fRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST')]);
+    const valid=rows.filter(r=>r.Tipo);
+    const forecast={};
+    fRows.forEach(r=>{const mes=(r.Mes||'').trim();const c=(r.Concepto||'').trim();if(!mes)return;if(!forecast[mes])forecast[mes]={};const p=typeof r.Proyectado==='number'?r.Proyectado:pm(r.Proyectado);if(c==='Total Ingresos')forecast[mes].ingProyectado=p;if(c==='Total Gastos')forecast[mes].gastoProyectado=p;});
+    render(processData(valid,forecast));
+  }catch(err){document.getElementById('app').innerHTML=`<div class="loading"><p style="color:var(--red);font-size:16px;margin-bottom:12px">Error cargando datos</p><p style="color:var(--text-2);font-size:13px">${err.message}</p><button class="btn btn-accent" style="margin-top:20px" onclick="loadDashboard()">Reintentar</button></div>`;}
 }
-
 loadDashboard();
-setInterval(loadDashboard, 5 * 60 * 1000);
+setInterval(loadDashboard,5*60*1000);
 </script>
 </body>
 </html>
