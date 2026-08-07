@@ -110,28 +110,136 @@ const COLORS=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a
 const PC=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060'];
 const NON_OP=['Retiro Socio','Impuestos'];
 const REC_CATS=['Software Recurrente'];
-const REC_SUBS=['mensualidad','suscripción','rebilling','whatsapp templates'];
-const PA={'eugenia':'Eugenia','euge':'Eugenia','peronace':'Eugenia','jesus':'Jesus','jesús':'Jesus','leal':'Jesus','axel':'Axel','benjamin':'Benjamin','benjamín':'Benjamin','benja':'Benjamin','cristian':'Cristian','christian':'Cristian','quimey':'Quimey','moreira':'Quimey','liliana':'Liliana','lili':'Liliana','daniel':'Daniel'};
-const PL=['Concepto','Subcategoría','Subcategoria','Notas'];
+const REC_CATS_N=['software recurrente','leads on demand','leads high quality'];
+const ONESHOT_CATS=['one shot','consultoria'];
+// OJO: iban con acento ('suscripción') pero se comparan contra texto ya normalizado sin acentos,
+// así que esa regla nunca disparaba. Van sin acento.
+const REC_SUBS=['mensualidad','suscripcion','rebilling','whatsapp templates','retainer','fee mensual'];
+const ONESHOT_SUBS=['set-up','set up','setup','anticipo','saldo','diagnostico','pago unico','proyecto','implementacion'];
+const NOM_CATS=['nomina','sueldos','honorarios'];
+const CAT_BASURA=['','egreso','otro gasto','otro','gasto','-'];
+const RET_KEYS=['retiro','ganancias','distribucion','caja de ahorro','caja de ganancias','reponer a caja','prestamo de taos','cuota de taos'];
+const PA={'eugenia':'Eugenia','euge':'Eugenia','peronace':'Eugenia','jesus':'Jesus','jesús':'Jesus','leal':'Jesus','axel':'Axel','benjamin':'Benjamin','benjamín':'Benjamin','benja':'Benjamin','cristian':'Cristian','christian':'Cristian','quimey':'Quimey','moreira':'Quimey','liliana':'Liliana','lili':'Liliana','daniel':'Daniel','agostina':'Agostina','agos':'Agostina','agus':'Agostina'};
+// Campos donde buscar la persona, en orden de confianza. 'Notas' se usa solo como último recurso
+// y se ignora si trae la firma automática del bot ("Via Telegram (Axel Álvarez)"), que antes
+// mandaba a Axel toda fila sin nombre reconocido.
+const PL=['Concepto','Subcategoría','Subcategoria'];
+const NOTAS_RUIDO=/via telegram|automatic|import/i;
+// Marcadores de titular: la persona que va inmediatamente después es la que cobra.
+const TITULAR_RE=/(honorarios?|nomina|sueldo|adelanto|retiro|ganancias|pago(?:\s+de)?(?:\s+nomina)?)\s+(?:de\s+|a\s+|para\s+)?([a-zñ]+)/gi;
 function sa(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
-function ep(text){if(!text)return null;const l=sa(String(text).toLowerCase());for(const a of Object.keys(PA).sort((x,y)=>y.length-x.length)){const re=new RegExp('(^|[^a-z0-9])'+sa(a).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i');if(re.test(l))return PA[a];}return null;}
-function fp(row){for(const c of PL){const p=ep(row[c]);if(p)return p;}return null;}
+function esc(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+const PA_KEYS=Object.keys(PA);
+// Devuelve TODAS las personas mencionadas, con la posición donde aparecen
+function eAll(text){if(!text)return[];const l=sa(String(text).toLowerCase());const out=[];
+  for(const a of PA_KEYS){const re=new RegExp('(^|[^a-z0-9])'+esc(sa(a))+'($|[^a-z0-9])','i');const m=re.exec(l);
+    if(m){const nom=PA[a];const pos=m.index;const prev=out.find(o=>o.p===nom);if(prev){if(pos<prev.pos)prev.pos=pos;}else out.push({p:nom,pos});}}
+  return out.sort((x,y)=>x.pos-y.pos);}
+// Persona "titular" de una fila: 1) la que sigue a un marcador (Honorarios X / Pago de nómina a X),
+// 2) la que aparece primero en el texto. Antes ganaba el alias más largo, por eso
+// "Honorarios Axel / Pago de tarjetas de Euge" se le cargaba a Eugenia.
+function epT(text){if(!text)return null;const l=sa(String(text).toLowerCase());
+  TITULAR_RE.lastIndex=0;let m;
+  while((m=TITULAR_RE.exec(l))!==null){const cand=m[2];for(const a of PA_KEYS){if(sa(a)===cand)return PA[a];}}
+  const all=eAll(text);return all.length?all[0].p:null;}
+function ep(text){return epT(text);}
+function fp(row){
+  for(const c of PL){const p=epT(row[c]);if(p)return p;}
+  const nt=row['Notas'];if(nt&&!NOTAS_RUIDO.test(String(nt))){const p=epT(nt);if(p)return p;}
+  return null;}
+// Personas mencionadas en toda la fila (para detectar filas ambiguas en la auditoría)
+function fpAll(row){const s=new Set();for(const c of PL){eAll(row[c]).forEach(o=>s.add(o.p));}return[...s];}
 function pm(s){if(!s&&s!==0)return 0;if(typeof s==='number')return s;let v=String(s).replace(/[A-Za-z$\s]/g,'');if(v.includes(',')&&v.includes('.')){v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.replace(/\./g,'').replace(',','.'):v.replace(/,/g,'');}else if(v.includes(',')){const p=v.split(',');v=p[p.length-1].length===2?v.replace(',','.'):v.replace(/,/g,'');}else if(v.includes('.')){const p=v.split('.');if(p.length>2)v=v.replace(/\./g,'');else if(p[1]&&p[1].length===3&&parseFloat(v)>=1)v=v.replace('.','')}return parseFloat(v)||0;}
 function fmt(n){const v=parseFloat(n)||0;if(v>=1000000)return'$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return'$'+Math.round(v).toLocaleString('es-MX');return'$'+v;}
 function fu(n){const v=parseFloat(n)||0;if(v>=1000)return'USD $'+(v/1000).toFixed(1)+'k';return'USD $'+Math.round(v);}
-function isRec(r){const cat=(r['Categoría']||r['Categoria']||'').trim();const sub=sa((r['Subcategoría']||r['Subcategoria']||'')).toLowerCase();if(REC_CATS.includes(cat))return true;return REC_SUBS.some(s=>sub.includes(s));}
+function cN(r){return sa(r['Categoría']||r['Categoria']||'').toLowerCase().trim();}
+function sN(r){return sa(r['Subcategoría']||r['Subcategoria']||'').toLowerCase().trim();}
+// Recurrencia por jerarquía. Antes solo miraba 'Software Recurrente' + 4 palabras clave,
+// así que desde abril (cuando el bot empezó a escribir "Venta high ticket" / "Pago High Ticket"
+// en vez de "Mensualidad") las mensualidades de High Ticket caían como One-Shot.
+function isRec(r){
+  const cat=cN(r),sub=sN(r);
+  if(ONESHOT_CATS.includes(cat))return false;          // 1. One Shot / Consultoría = siempre nuevo
+  if(REC_CATS_N.includes(cat))return true;             // 2. Software Recurrente = siempre MRR
+  if(ONESHOT_SUBS.some(s=>sub.includes(s)))return false;// 3. set-up, anticipo, saldo... = nuevo
+  if(REC_SUBS.some(s=>sub.includes(s)))return true;    // 4. mensualidad, rebilling, suscripcion...
+  if(cat==='high ticket'||cat==='low ticket')return true;// 5. retainers = MRR por defecto
+  return false;}
+function esNomina(r){
+  const c=cN(r),s=sN(r);
+  if(NOM_CATS.includes(c))return true;
+  // Rescate: filas con las columnas invertidas (Categoria="Egreso", Subcategoria="Nómina")
+  if(CAT_BASURA.includes(c)&&/nomina|sueldo|honorario/.test(s))return true;
+  return false;}
+function pareceRetiro(r){
+  const t=sa(String(r.Concepto||'')+' '+String(r['Subcategoría']||r['Subcategoria']||'')).toLowerCase();
+  return RET_KEYS.some(k=>t.includes(k));}
 
 function parseGviz(text){const s=text.indexOf('{'),e=text.lastIndexOf('}');if(s===-1||e===-1)return[];const d=JSON.parse(text.substring(s,e+1));if(!d.table||!d.table.cols||!d.table.rows)return[];const h=d.table.cols.map(c=>(c.label||c.id||'').trim());return d.table.rows.map(row=>{const o={};row.c.forEach((c,i)=>{if(!h[i])return;if(c===null){o[h[i]]='';return;}o[h[i]]=(c.v===null||c.v===undefined)?(c.f||''):typeof c.v==='number'?c.v:String(c.v);});return o;});}
 async function fetchSheet(sh){const url=`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sh)}`;const r=await fetch(url);return parseGviz(await r.text());}
+
+// Panel de calidad de datos: hace visibles los errores que antes se absorbían en silencio.
+function renderAudit(a){
+  if(!a)return'';
+  const sum=l=>l.reduce((s,x)=>s+x.m,0);
+  const blocks=[
+    {k:'sinPersona',t:'Nómina sin persona identificada',d:'Agregá el nombre en el Concepto o sumá el alias en PA',c:'var(--red)'},
+    {k:'catMala',t:'Categoría fuera del catálogo',d:'Probable inversión de columnas Categoría / Subcategoría',c:'var(--red)'},
+    {k:'retEnNom',t:'Posibles retiros dentro de Nómina',d:'Recategorizar a "Retiro Socio" si corresponde — hoy inflan el costo de nómina',c:'var(--purple)'},
+    {k:'ambiguas',t:'Filas con más de una persona',d:'Se asignó al titular detectado; verificar',c:'var(--orange)'},
+    {k:'dups',t:'Posibles duplicados exactos',d:'Misma fecha, categoría, concepto y monto',c:'var(--orange)'},
+    {k:'mesFecha',t:'Mes no coincide con Fecha',d:'El dashboard agrupa por la columna Mes',c:'var(--orange)'}
+  ].filter(b=>(a[b.k]||[]).length>0);
+  if(!blocks.length)return`<div class="section-title"><h2>Auditoría de Datos</h2><span class="badge bb" style="margin-left:4px">OK</span><div class="line"></div></div>
+  <div class="chart-card"><div class="chart-sub" style="margin:0">Sin inconsistencias detectadas en el REGISTRO.</div></div>`;
+  const total=blocks.reduce((s,b)=>s+sum(a[b.k]),0);
+  let h=`<div class="section-title"><h2>Auditoría de Datos</h2><span class="badge br" style="margin-left:4px">${blocks.reduce((s,b)=>s+a[b.k].length,0)} FILAS</span><div class="line"></div></div>
+  <div class="chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="chart-sub" style="margin:0">Filas que el dashboard no puede interpretar con certeza — corregir en el Sheet</div>
+      <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--red)">Monto afectado: ${fmt(total)}</div>
+    </div>`;
+  blocks.forEach(b=>{
+    const l=a[b.k];
+    h+=`<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="alert-dot" style="background:${b.c}"></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-1)">${b.t}</div>
+        <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${b.c}">${l.length} · ${fmt(sum(l))}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">${b.d}</div>
+      <div style="display:flex;flex-direction:column;gap:3px">`;
+    l.slice(0,12).forEach(x=>{
+      const extra=x.todos?` <span style="color:var(--text-3)">(${x.todos.join(' / ')} → ${x.p})</span>`
+        :x.p?` <span style="color:var(--text-3)">(→ ${x.p})</span>`
+        :x.mf?` <span style="color:var(--text-3)">(fecha dice ${x.mf})</span>`
+        :x.sub?` <span style="color:var(--text-3)">[${x.cat} / ${x.sub}]</span>`:'';
+      h+=`<div style="display:flex;gap:10px;font-size:12px;padding:5px 8px;background:var(--border2)22;border-radius:5px">
+        <span style="color:var(--text-3);width:62px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:11px">${String(x.mes).substring(0,3)}</span>
+        <span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.c||'(sin concepto)'}${extra}</span>
+        <span style="font-family:'JetBrains Mono',monospace;color:var(--text-1);flex-shrink:0">${fmt(x.m)}</span>
+      </div>`;});
+    if(l.length>12)h+=`<div style="font-size:11px;color:var(--text-3);padding:4px 8px">+ ${l.length-12} filas más…</div>`;
+    h+=`</div></div>`;});
+  return h+`</div>`;
+}
 
 function processData(rows,forecast){
   forecast=forecast||{};
   let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0;
   const MM={},iCat={},eCat={},cliM={},payPM={},witPM={},payPT={},witPT={};
+  const audit={sinPersona:[],ambiguas:[],catMala:[],dups:[],mesFecha:[],retEnNom:[]};
+  const seen={};
   rows.forEach(r=>{
     const mes=r.Mes;if(!mes)return;
     const m=pm(r['Monto MXN']);
     const cat=r['Categoría']||r['Categoria']||'Otro';
+    // ---- Auditoría de calidad del dato ----
+    const conc=String(r.Concepto||'').trim();
+    const key=[r.Fecha,r.Tipo,cat,conc,m].join('|');
+    if(seen[key])audit.dups.push({mes,cat,c:conc,m});else seen[key]=1;
+    if(r.Fecha){const d=new Date(r.Fecha);if(!isNaN(d)){const mf=MESES_ORDER[d.getMonth()];if(mf&&mf!==String(mes).trim())audit.mesFecha.push({mes,mf,c:conc,m});}}
+    if(CAT_BASURA.includes(cN(r)))audit.catMala.push({mes,cat,sub:r['Subcategoría']||r['Subcategoria']||'',c:conc,m});
     if(!MM[mes])MM[mes]={i:0,rec:0,nvo:0,gOp:0,nom:0,ret:0,imp:0};
     if(r.Tipo==='Ingreso'){
       tI+=m;MM[mes].i+=m;iCat[cat]=(iCat[cat]||0)+m;
@@ -140,7 +248,21 @@ function processData(rows,forecast){
     }else if(r.Tipo==='Egreso'){
       if(cat==='Retiro Socio'){tRet+=m;MM[mes].ret+=m;const p=fp(r)||'Otros';if(!witPM[mes])witPM[mes]={};witPM[mes][p]=(witPM[mes][p]||0)+m;witPT[p]=(witPT[p]||0)+m;}
       else if(cat==='Impuestos'){tImp+=m;MM[mes].imp+=m;}
-      else{tGOp+=m;MM[mes].gOp+=m;eCat[cat]=(eCat[cat]||0)+m;const cn=sa(cat).toLowerCase();if(cn==='nomina'||cn==='sueldos'||cn==='honorarios'){tNom+=m;MM[mes].nom+=m;const p=fp(r)||'Sin identificar';if(!payPM[mes])payPM[mes]={};payPM[mes][p]=(payPM[mes][p]||0)+m;payPT[p]=(payPT[p]||0)+m;}}
+      else{
+        const nomFlag=esNomina(r);
+        // Las filas rescatadas (Categoria="Egreso") se muestran como Nómina en el donut,
+        // no como una categoría fantasma.
+        const catShow=nomFlag&&CAT_BASURA.includes(cN(r))?'Nómina':cat;
+        tGOp+=m;MM[mes].gOp+=m;eCat[catShow]=(eCat[catShow]||0)+m;
+        if(nomFlag){
+          tNom+=m;MM[mes].nom+=m;
+          const p=fp(r)||'Sin identificar';
+          if(!payPM[mes])payPM[mes]={};payPM[mes][p]=(payPM[mes][p]||0)+m;payPT[p]=(payPT[p]||0)+m;
+          if(p==='Sin identificar')audit.sinPersona.push({mes,c:conc,m});
+          const todos=fpAll(r);if(todos.length>1)audit.ambiguas.push({mes,c:conc,m,p,todos});
+          if(pareceRetiro(r))audit.retEnNom.push({mes,c:conc,m,p});
+        }
+      }
     }
   });
   const pOp=tI-tGOp,rNeto=pOp-tImp,rNom=tI>0?(tNom/tI*100):0;
@@ -168,7 +290,7 @@ function processData(rows,forecast){
 
   return{
     t:{i:Math.round(tI),rec:Math.round(tRec),nvo:Math.round(tNuevo),gOp:Math.round(tGOp),nom:Math.round(tNom),ret:Math.round(tRet),imp:Math.round(tImp),pOp:Math.round(pOp),rNeto:Math.round(rNeto),margen:tI>0?(pOp/tI*100).toFixed(1):0,rNom:rNom.toFixed(1),rGOp:tI>0?(tGOp/tI*100).toFixed(1):0,mCon:mCon.length,topCli:topCli[0]||{name:'-',total:0},topCliPct:tI>0&&topCli[0]?(topCli[0].total/tI*100).toFixed(1):0,pctRec:tI>0?((tRec/tI)*100).toFixed(1):0},
-    mrr:{val:mrrEst,arr:mrrEst*12},monthly,alerts,iBC,eBC,topCli,
+    mrr:{val:mrrEst,arr:mrrEst*12},monthly,alerts,iBC,eBC,topCli,audit,
     pay:{pp:payP,pt:payPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:payPM[m]||{}})),g:Math.round(payG)},
     wit:{pp:witP,pt:witPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:witPM[m]||{}})),g:Math.round(witG)}
   };
@@ -293,6 +415,7 @@ function render(data){
     <canvas id="payrollChart" height="110"></canvas>
     <div id="payrollLegend" style="margin-top:14px"></div>
   </div>
+  ${renderAudit(data.audit)}
   <div class="section-title"><h2>Retiros de Socios</h2><div class="line"></div></div>
   <div class="chart-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
