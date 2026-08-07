@@ -171,6 +171,7 @@ function esNomina(r){
   // Rescate: filas con las columnas invertidas (Categoria="Egreso", Subcategoria="Nómina")
   if(CAT_BASURA.includes(c)&&/nomina|sueldo|honorario/.test(s))return true;
   return false;}
+function cliKey(s){return sa(String(s||'')).toLowerCase().replace(/\s+/g,' ').trim();}
 function pareceRetiro(r){
   const t=sa(String(r.Concepto||'')+' '+String(r['Subcategoría']||r['Subcategoria']||'')).toLowerCase();
   return RET_KEYS.some(k=>t.includes(k));}
@@ -186,6 +187,7 @@ function renderAudit(a){
     {k:'sinPersona',t:'Nómina sin persona identificada',d:'Agregá el nombre en el Concepto o sumá el alias en PA',c:'var(--red)'},
     {k:'catMala',t:'Categoría fuera del catálogo',d:'Probable inversión de columnas Categoría / Subcategoría',c:'var(--red)'},
     {k:'retEnNom',t:'Posibles retiros dentro de Nómina',d:'Recategorizar a "Retiro Socio" si corresponde — hoy inflan el costo de nómina',c:'var(--purple)'},
+    {k:'cliVar',t:'Mismo cliente escrito de varias formas',d:'Se unificaron en el ranking; conviene normalizarlo en el Sheet',c:'var(--blue)'},
     {k:'ambiguas',t:'Filas con más de una persona',d:'Se asignó al titular detectado; verificar',c:'var(--orange)'},
     {k:'dups',t:'Posibles duplicados exactos',d:'Misma fecha, categoría, concepto y monto',c:'var(--orange)'},
     {k:'mesFecha',t:'Mes no coincide con Fecha',d:'El dashboard agrupa por la columna Mes',c:'var(--orange)'}
@@ -227,8 +229,8 @@ function renderAudit(a){
 function processData(rows,forecast){
   forecast=forecast||{};
   let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0;
-  const MM={},iCat={},eCat={},cliM={},payPM={},witPM={},payPT={},witPT={};
-  const audit={sinPersona:[],ambiguas:[],catMala:[],dups:[],mesFecha:[],retEnNom:[]};
+  const MM={},iCat={},eCat={},cliM={},cliVar={},payPM={},witPM={},payPT={},witPT={};
+  const audit={sinPersona:[],ambiguas:[],catMala:[],cliVar:[],dups:[],mesFecha:[],retEnNom:[]};
   const seen={};
   rows.forEach(r=>{
     const mes=r.Mes;if(!mes)return;
@@ -243,7 +245,8 @@ function processData(rows,forecast){
     if(!MM[mes])MM[mes]={i:0,rec:0,nvo:0,gOp:0,nom:0,ret:0,imp:0};
     if(r.Tipo==='Ingreso'){
       tI+=m;MM[mes].i+=m;iCat[cat]=(iCat[cat]||0)+m;
-      const cli=r.Cliente;if(cli)cliM[cli]=(cliM[cli]||0)+m;
+      const cli=r.Cliente&&String(r.Cliente).trim();
+      if(cli){const k=cliKey(cli);cliM[k]=(cliM[k]||0)+m;if(!cliVar[k])cliVar[k]={};cliVar[k][cli]=(cliVar[k][cli]||0)+1;}
       if(isRec(r)){tRec+=m;MM[mes].rec+=m;}else{tNuevo+=m;MM[mes].nvo+=m;}
     }else if(r.Tipo==='Egreso'){
       if(cat==='Retiro Socio'){tRet+=m;MM[mes].ret+=m;const p=fp(r)||'Otros';if(!witPM[mes])witPM[mes]={};witPM[mes][p]=(witPM[mes][p]||0)+m;witPT[p]=(witPT[p]||0)+m;}
@@ -278,9 +281,23 @@ function processData(rows,forecast){
 
   const monthly=MESES_ORDER.filter(m=>MM[m]).map(m=>{const d=MM[m];const fc=forecast[m]||{};return{mes:m.substring(0,3),mesFull:m,i:Math.round(d.i),rec:Math.round(d.rec),nvo:Math.round(d.nvo),gOp:Math.round(d.gOp),nom:Math.round(d.nom),ret:Math.round(d.ret),imp:Math.round(d.imp),pOp:Math.round(d.i-d.gOp),rNom:d.i>0?(d.nom/d.i*100):0,rGOp:d.i>0?(d.gOp/d.i*100):0,isP:m===curMes,fI:fc.ingProyectado||null,fG:fc.gastoProyectado||null};});
 
-  const CM={'Capital Park':'Urbano Park','Encore':'Urbano Park','Encore San Angel':'Urbano Park'};
-  const cliMrg={};Object.entries(cliM).forEach(([k,v])=>{let n=k.trim();for(const[a,c]of Object.entries(CM)){if(n.includes(a)){n=c;break;}}cliMrg[n]=(cliMrg[n]||0)+v;});
-  const topCli=Object.entries(cliMrg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([name,total])=>({name,total:Math.round(total)}));
+  // Alias de clientes. Las claves se comparan normalizadas (sin acentos, minúsculas),
+  // así que "AlphaRealtors" y "Alpharealtors" ya no se separan en dos filas.
+  const CM={'capital park':'Urbano Park','encore':'Urbano Park','encore san angel':'Urbano Park','blossom gran park':'Blossom Grand Park'};
+  const cliMrg={},cliNames={};
+  Object.entries(cliM).forEach(([k,v])=>{
+    let key=k,alias=null;
+    for(const[a,c]of Object.entries(CM)){if(k.includes(a)){key=cliKey(c);alias=c;break;}}
+    cliMrg[key]=(cliMrg[key]||0)+v;
+    if(!cliNames[key])cliNames[key]={};
+    if(alias)cliNames[key][alias]=(cliNames[key][alias]||0)+999;
+    Object.entries(cliVar[k]||{}).forEach(([n,c])=>{cliNames[key][n]=(cliNames[key][n]||0)+c;});
+  });
+  // Nombre a mostrar = la variante más usada (desempate: la más larga)
+  const dispName=k=>{const v=cliNames[k]||{};const e=Object.entries(v).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length);return e.length?e[0][0]:k;};
+  const canon=k=>{for(const[a,c]of Object.entries(CM)){if(k.includes(a))return cliKey(c);}return k;};
+  Object.entries(cliVar).forEach(([k,v])=>{const vs=Object.keys(v);if(vs.length>1)audit.cliVar.push({mes:'—',c:vs.join('  ·  '),m:cliM[k]||0,p:dispName(canon(k))});});
+  const topCli=Object.entries(cliMrg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,total])=>({name:dispName(k),total:Math.round(total)}));
   const iBC=Object.entries(iCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tI>0?((v/tI)*100).toFixed(1):0}));
   const eBC=Object.entries(eCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tGOp>0?((v/tGOp)*100).toFixed(1):0}));
   const payP=Object.keys(payPT).sort((a,b)=>payPT[b]-payPT[a]);
