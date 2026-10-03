@@ -125,6 +125,17 @@ const PA={'eugenia':'Eugenia','euge':'Eugenia','peronace':'Eugenia','jesus':'Jes
 // mandaba a Axel toda fila sin nombre reconocido.
 const PL=['Concepto','Subcategoría','Subcategoria'];
 const NOTAS_RUIDO=/via telegram|automatic|import/i;
+// Catálogo oficial de categorías (normalizado: sin acentos, minúsculas)
+const CATALOGO=['software recurrente','high ticket','one shot','consultoria','low ticket','leads on demand','leads high quality','otro ingreso','nomina','retiro socio','suscripciones/herramientas','publicidad','infraestructura','comision','impuestos','freelancers','servicios profesionales','capacitaciones','otro gasto','reembolso de pauta'];
+// Variantes que se unifican al mostrar
+const CAT_ALIAS={'suscripciones':'Suscripciones/Herramientas','comision':'Comisión'};
+// Ingresos que no son facturación de la agencia (pauta que paga el cliente): fuera de ingresos, neteados contra Publicidad
+const PASS_IN=['publicidad','reembolso de pauta','pauta'];
+// Pagos/totales de tarjeta y cuotas registrados como gasto (rompen el criterio de devengado)
+const CARD_RE=/pago (parcial |adelantado |total )?(de )?(la )?(tarjeta|hsbc|amex|american express)|pago de suscripciones (con tarjeta|hsbc)|pago suscripciones banco|adelanto de saldo|amortizacion|deuda total|ultima cuota|^(amex|hsbc|american express)$|suscripcion software american express|^hsbc - /;
+const INT_RE=/intereses/;
+// Alias de clientes (claves normalizadas)
+const CM={'capital park':'Urbano Park','encore':'Urbano Park','encore san angel':'Urbano Park','blossom gran park':'Blossom Grand Park'};
 // Marcadores de titular: la persona que va inmediatamente después es la que cobra.
 const TITULAR_RE=/(honorarios?|nomina|sueldo|adelanto|retiro|ganancias|pago(?:\s+de)?(?:\s+nomina)?)\s+(?:de\s+|a\s+|para\s+)?([a-zñ]+)/gi;
 function sa(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
@@ -150,8 +161,16 @@ function fp(row){
 // Personas mencionadas en toda la fila (para detectar filas ambiguas en la auditoría)
 function fpAll(row){const s=new Set();for(const c of PL){eAll(row[c]).forEach(o=>s.add(o.p));}return[...s];}
 function pm(s){if(!s&&s!==0)return 0;if(typeof s==='number')return s;let v=String(s).replace(/[A-Za-z$\s]/g,'');if(v.includes(',')&&v.includes('.')){v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.replace(/\./g,'').replace(',','.'):v.replace(/,/g,'');}else if(v.includes(',')){const p=v.split(',');v=p[p.length-1].length===2?v.replace(',','.'):v.replace(/,/g,'');}else if(v.includes('.')){const p=v.split('.');if(p.length>2)v=v.replace(/\./g,'');else if(p[1]&&p[1].length===3&&parseFloat(v)>=1)v=v.replace('.','')}return parseFloat(v)||0;}
-function fmt(n){const v=parseFloat(n)||0;if(v>=1000000)return'$'+(v/1000000).toFixed(1)+'M';if(v>=1000)return'$'+Math.round(v).toLocaleString('es-MX');return'$'+v;}
-function fu(n){const v=parseFloat(n)||0;if(v>=1000)return'USD $'+(v/1000).toFixed(1)+'k';return'USD $'+Math.round(v);}
+function fmt(n){const v=parseFloat(n)||0,a=Math.abs(v),s=v<0?'-':'';if(a>=1000000)return s+'$'+(a/1000000).toFixed(1)+'M';if(a>=1000)return s+'$'+Math.round(a).toLocaleString('es-MX');return s+'$'+Math.round(a);}
+function fu(n){const v=parseFloat(n)||0,a=Math.abs(v),s=v<0?'-':'';if(a>=1000)return s+'USD $'+(a/1000).toFixed(1)+'k';return s+'USD $'+Math.round(a);}
+// gviz entrega las fechas como "Date(2026,0,5)"; new Date() no las entiende
+function pDate(v){if(!v&&v!==0)return null;const s=String(v).trim();let m=s.match(/^Date\((\d+),(\d+),(\d+)/);if(m)return new Date(+m[1],+m[2],+m[3]);
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  const d=new Date(s);return isNaN(d)?null:d;}
+function fmtD(d){return d?d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'}):'';}
+function catShowName(cat){return CAT_ALIAS[sa(cat).toLowerCase().trim()]||cat;}
+function canonCli(k){for(const[a,c]of Object.entries(CM)){if(k.includes(a))return cliKey(c);}return k;}
 function cN(r){return sa(r['Categoría']||r['Categoria']||'').toLowerCase().trim();}
 function sN(r){return sa(r['Subcategoría']||r['Subcategoria']||'').toLowerCase().trim();}
 // Recurrencia por jerarquía. Antes solo miraba 'Software Recurrente' + 4 palabras clave,
@@ -170,6 +189,8 @@ function esNomina(r){
   if(NOM_CATS.includes(c))return true;
   // Rescate: filas con las columnas invertidas (Categoria="Egreso", Subcategoria="Nómina")
   if(CAT_BASURA.includes(c)&&/nomina|sueldo|honorario/.test(s))return true;
+  // Honorarios de un integrante del equipo cargados como Servicios Profesionales
+  if(c==='servicios profesionales'&&/honorario/.test(s+' '+sa(String(r.Concepto||'')).toLowerCase())&&fp(r))return true;
   return false;}
 function cliKey(s){return sa(String(s||'')).toLowerCase().replace(/\s+/g,' ').trim();}
 function pareceRetiro(r){
@@ -184,10 +205,16 @@ function renderAudit(a){
   if(!a)return'';
   const sum=l=>l.reduce((s,x)=>s+x.m,0);
   const blocks=[
+    {k:'dupIng',t:'Posibles ingresos duplicados',d:'Mismo cliente y monto en 5 días o menos, o la misma mensualidad cargada dos veces. Siguen sumando en los totales hasta que se corrijan en el Sheet',c:'var(--red)'},
+    {k:'futuras',t:'Filas con fecha futura',d:'Excluidas de los totales hasta que llegue su fecha. Si son cargos de tarjeta, registrarlos con la fecha del cargo original',c:'var(--red)'},
     {k:'sinPersona',t:'Nómina sin persona identificada',d:'Agregá el nombre en el Concepto o sumá el alias en PA',c:'var(--red)'},
-    {k:'catMala',t:'Categoría fuera del catálogo',d:'Probable inversión de columnas Categoría / Subcategoría',c:'var(--red)'},
+    {k:'catMala',t:'Categoría vacía o genérica',d:'Probable inversión de columnas Categoría / Subcategoría',c:'var(--red)'},
+    {k:'tarjeta',t:'Pagos de tarjeta registrados como gasto',d:'Siguen sumando en los totales. Reemplazar por los cargos individuales con su fecha original; pagos de saldo y cuotas MSI son tesorería, no gasto',c:'var(--orange)'},
     {k:'retEnNom',t:'Posibles retiros dentro de Nómina',d:'Recategorizar a "Retiro Socio" si corresponde — hoy inflan el costo de nómina',c:'var(--purple)'},
+    {k:'retSinSocio',t:'Retiros sin socio identificado',d:'Agregá el nombre del socio en el Concepto',c:'var(--purple)'},
+    {k:'passThru',t:'Pauta pagada por clientes',d:'Excluida de ingresos y neteada contra Publicidad. Si en realidad fue un gasto, cambiar Tipo a Egreso en el Sheet',c:'var(--blue)'},
     {k:'cliVar',t:'Mismo cliente escrito de varias formas',d:'Se unificaron en el ranking; conviene normalizarlo en el Sheet',c:'var(--blue)'},
+    {k:'catFuera',t:'Categoría fuera del catálogo',d:'Se unificó al mostrar; normalizar en el Sheet',c:'var(--blue)'},
     {k:'ambiguas',t:'Filas con más de una persona',d:'Se asignó al titular detectado; verificar',c:'var(--orange)'},
     {k:'dups',t:'Posibles duplicados exactos',d:'Misma fecha, categoría, concepto y monto',c:'var(--orange)'},
     {k:'mesFecha',t:'Mes no coincide con Fecha',d:'El dashboard agrupa por la columna Mes',c:'var(--orange)'}
@@ -212,7 +239,8 @@ function renderAudit(a){
       <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">${b.d}</div>
       <div style="display:flex;flex-direction:column;gap:3px">`;
     l.slice(0,12).forEach(x=>{
-      const extra=x.todos?` <span style="color:var(--text-3)">(${x.todos.join(' / ')} → ${x.p})</span>`
+      const extra=x.nota?` <span style="color:var(--text-3)">(${x.nota})</span>`
+        :x.todos?` <span style="color:var(--text-3)">(${x.todos.join(' / ')} → ${x.p})</span>`
         :x.p?` <span style="color:var(--text-3)">(→ ${x.p})</span>`
         :x.mf?` <span style="color:var(--text-3)">(fecha dice ${x.mf})</span>`
         :x.sub?` <span style="color:var(--text-3)">[${x.cat} / ${x.sub}]</span>`:'';
@@ -228,34 +256,45 @@ function renderAudit(a){
 
 function processData(rows,forecast){
   forecast=forecast||{};
-  let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0;
+  let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0,tPass=0;
   const MM={},iCat={},eCat={},cliM={},cliVar={},payPM={},witPM={},payPT={},witPT={};
-  const audit={sinPersona:[],ambiguas:[],catMala:[],cliVar:[],dups:[],mesFecha:[],retEnNom:[]};
-  const seen={};
+  const audit={dupIng:[],futuras:[],sinPersona:[],catMala:[],tarjeta:[],retEnNom:[],retSinSocio:[],passThru:[],cliVar:[],catFuera:[],ambiguas:[],dups:[],mesFecha:[]};
+  const seen={},ingList=[];
+  const now=new Date(),curIdx=now.getMonth(),curMes=MESES_ORDER[curIdx];
+  const hoy=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59);
   rows.forEach(r=>{
-    const mes=r.Mes;if(!mes)return;
+    const mes=String(r.Mes||'').trim();if(!mes)return;
+    const mIdx=MESES_ORDER.indexOf(mes);
     const m=pm(r['Monto MXN']);
-    const cat=r['Categoría']||r['Categoria']||'Otro';
-    // ---- Auditoría de calidad del dato ----
+    const cat=String(r['Categoría']||r['Categoria']||'Otro').trim();
+    const cn=cN(r);
     const conc=String(r.Concepto||'').trim();
+    const fd=pDate(r.Fecha);
+    // ---- Filas futuras: fuera de los totales hasta que llegue su fecha ----
+    if((fd&&fd>hoy)||mIdx>curIdx){audit.futuras.push({mes,c:conc,m,nota:fd?'fecha '+fmtD(fd):'mes futuro'});return;}
+    // ---- Auditoría de calidad del dato ----
     const key=[r.Fecha,r.Tipo,cat,conc,m].join('|');
     if(seen[key])audit.dups.push({mes,cat,c:conc,m});else seen[key]=1;
-    if(r.Fecha){const d=new Date(r.Fecha);if(!isNaN(d)){const mf=MESES_ORDER[d.getMonth()];if(mf&&mf!==String(mes).trim())audit.mesFecha.push({mes,mf,c:conc,m});}}
-    if(CAT_BASURA.includes(cN(r)))audit.catMala.push({mes,cat,sub:r['Subcategoría']||r['Subcategoria']||'',c:conc,m});
-    if(!MM[mes])MM[mes]={i:0,rec:0,nvo:0,gOp:0,nom:0,ret:0,imp:0};
+    if(fd){const mf=MESES_ORDER[fd.getMonth()];if(mf&&mf!==mes)audit.mesFecha.push({mes,mf,c:conc,m});}
+    if(CAT_BASURA.includes(cn))audit.catMala.push({mes,cat,sub:r['Subcategoría']||r['Subcategoria']||'',c:conc,m});
+    else if(!CATALOGO.includes(cn))audit.catFuera.push({mes,c:conc,m,nota:CAT_ALIAS[cn]?`${cat} → ${CAT_ALIAS[cn]}`:`"${cat}" no está en el catálogo`});
+    if(!MM[mes])MM[mes]={i:0,rec:0,nvo:0,gOp:0,nom:0,ret:0,imp:0,pass:0};
     if(r.Tipo==='Ingreso'){
+      // Pauta que paga el cliente: no es facturación de la agencia
+      if(PASS_IN.includes(cn)){tPass+=m;MM[mes].pass+=m;audit.passThru.push({mes,c:conc,m,nota:r.Cliente?String(r.Cliente).trim():'sin cliente'});return;}
       tI+=m;MM[mes].i+=m;iCat[cat]=(iCat[cat]||0)+m;
       const cli=r.Cliente&&String(r.Cliente).trim();
-      if(cli){const k=cliKey(cli);cliM[k]=(cliM[k]||0)+m;if(!cliVar[k])cliVar[k]={};cliVar[k][cli]=(cliVar[k][cli]||0)+1;}
+      if(cli){const k=cliKey(cli);cliM[k]=(cliM[k]||0)+m;if(!cliVar[k])cliVar[k]={};cliVar[k][cli]=(cliVar[k][cli]||0)+1;ingList.push({mes,fd,k:canonCli(k),c:conc,m});}
       if(isRec(r)){tRec+=m;MM[mes].rec+=m;}else{tNuevo+=m;MM[mes].nvo+=m;}
     }else if(r.Tipo==='Egreso'){
-      if(cat==='Retiro Socio'){tRet+=m;MM[mes].ret+=m;const p=fp(r)||'Otros';if(!witPM[mes])witPM[mes]={};witPM[mes][p]=(witPM[mes][p]||0)+m;witPT[p]=(witPT[p]||0)+m;}
+      const txt=sa(conc+' '+String(r['Subcategoría']||r['Subcategoria']||'')).toLowerCase().trim();
+      if(!esNomina(r)&&(CARD_RE.test(txt)||CARD_RE.test(sa(conc).toLowerCase())))audit.tarjeta.push({mes,c:conc,m,nota:cat});
+      if(cat==='Retiro Socio'){tRet+=m;MM[mes].ret+=m;const p=fp(r);if(!p)audit.retSinSocio.push({mes,c:conc,m});const pp=p||'Sin identificar';if(!witPM[mes])witPM[mes]={};witPM[mes][pp]=(witPM[mes][pp]||0)+m;witPT[pp]=(witPT[pp]||0)+m;}
       else if(cat==='Impuestos'){tImp+=m;MM[mes].imp+=m;}
       else{
         const nomFlag=esNomina(r);
-        // Las filas rescatadas (Categoria="Egreso") se muestran como Nómina en el donut,
-        // no como una categoría fantasma.
-        const catShow=nomFlag&&CAT_BASURA.includes(cN(r))?'Nómina':cat;
+        // Las filas rescatadas (Categoria="Egreso" o honorarios del equipo) se muestran como Nómina
+        const catShow=nomFlag&&(CAT_BASURA.includes(cn)||cn==='servicios profesionales')?'Nómina':INT_RE.test(txt)?'Gastos financieros':catShowName(cat);
         tGOp+=m;MM[mes].gOp+=m;eCat[catShow]=(eCat[catShow]||0)+m;
         if(nomFlag){
           tNom+=m;MM[mes].nom+=m;
@@ -268,22 +307,35 @@ function processData(rows,forecast){
       }
     }
   });
-  const pOp=tI-tGOp,rNeto=pOp-tImp,rNom=tI>0?(tNom/tI*100):0;
-  const curMes=MESES_ORDER[new Date().getMonth()];
+  // Pauta de clientes: se netea contra Publicidad (lo que el cliente reembolsa no es gasto de la agencia)
+  if(tPass){tGOp-=tPass;Object.values(MM).forEach(x=>{x.gOp-=x.pass;});eCat['Publicidad']=(eCat['Publicidad']||0)-tPass;if(eCat['Publicidad']<=0)delete eCat['Publicidad'];}
+  // Posibles ingresos duplicados: mismo cliente, monto ±3% en ≤5 días, o la misma mensualidad nombrada dos veces
+  const MES_N=MESES_ORDER.map(x=>sa(x).toLowerCase());
+  const mesesEn=c=>MES_N.filter(x=>sa(c).toLowerCase().includes(x));
+  const byCli={};ingList.filter(x=>x.m>=5000).forEach(x=>{(byCli[x.k]=byCli[x.k]||[]).push(x);});
+  Object.values(byCli).forEach(l=>{l.sort((a,b)=>(a.fd||0)-(b.fd||0));
+    for(let i=0;i<l.length;i++)for(let j=i+1;j<l.length;j++){const a=l[i],b=l[j];
+      const cerca=a.fd&&b.fd&&Math.abs(b.fd-a.fd)<=5*864e5&&Math.abs(a.m-b.m)<=Math.max(a.m,b.m)*0.03;
+      const ma=mesesEn(a.c),mb=mesesEn(b.c);const mismoMes=ma.length===1&&mb.length===1&&ma[0]===mb[0];
+      if(cerca||mismoMes)audit.dupIng.push({mes:b.mes,c:b.c,m:b.m,nota:`ya cargado el ${fmtD(a.fd)||a.mes} por ${fmt(a.m)}`});}});
+  const pOp=tI-tGOp,rNeto=pOp-tImp,retenido=rNeto-tRet,rNom=tI>0?(tNom/tI*100):0;
   const mCon=MESES_ORDER.filter(m=>MM[m]);
-  const mCerr=mCon.filter(m=>m!==curMes).slice(-2);
-  const mrrEst=mCerr.length>0?Math.round(mCerr.reduce((s,m)=>s+(MM[m]?.rec||0),0)/mCerr.length):Math.round(tRec/(mCon.length||1));
+  // MRR: promedio de los últimos 3 meses CERRADOS (anteriores al mes en curso).
+  // Antes tomaba "los 2 últimos meses con datos que no sean el actual", así que una fila
+  // con fecha futura metía un mes vacío en el promedio y partía el MRR a la mitad.
+  const mCerr=mCon.filter(m=>MESES_ORDER.indexOf(m)<curIdx).slice(-3);
+  const mrrEst=mCerr.length>0?Math.round(mCerr.reduce((s,m)=>s+(MM[m]?.rec||0),0)/mCerr.length):0;
 
   const alerts=[];
   const cd=MM[curMes];
   if(cd){const rn=cd.i>0?cd.nom/cd.i*100:0;if(rn>65)alerts.push({t:'red',m:`Nómina este mes = ${rn.toFixed(0)}% de ingresos — zona crítica (>65%)`});else if(rn>50)alerts.push({t:'amber',m:`Nómina este mes = ${rn.toFixed(0)}% de ingresos — zona de atención (50–65%)`});if(cd.i===0&&new Date().getDate()>10)alerts.push({t:'red',m:'Sin ingresos registrados este mes y pasaron más de 10 días'});if(cd.gOp>cd.i&&cd.i>0)alerts.push({t:'amber',m:`Gastos operativos (${fmt(cd.gOp)}) superan ingresos este mes`});}
+  if(audit.dupIng.length)alerts.push({t:'red',m:`${audit.dupIng.length} ingreso(s) posiblemente duplicado(s) por ${fmt(audit.dupIng.reduce((s,x)=>s+x.m,0))} — siguen sumando en los totales, ver Auditoría de Datos`});
+  if(audit.futuras.length)alerts.push({t:'amber',m:`${audit.futuras.length} fila(s) con fecha futura por ${fmt(audit.futuras.reduce((s,x)=>s+x.m,0))} excluidas de los totales`});
   if(tRet>pOp&&pOp>0)alerts.push({t:'amber',m:`Retiros de socios (${fmt(tRet)}) superan profit operativo YTD (${fmt(pOp)})`});
 
   const monthly=MESES_ORDER.filter(m=>MM[m]).map(m=>{const d=MM[m];const fc=forecast[m]||{};return{mes:m.substring(0,3),mesFull:m,i:Math.round(d.i),rec:Math.round(d.rec),nvo:Math.round(d.nvo),gOp:Math.round(d.gOp),nom:Math.round(d.nom),ret:Math.round(d.ret),imp:Math.round(d.imp),pOp:Math.round(d.i-d.gOp),rNom:d.i>0?(d.nom/d.i*100):0,rGOp:d.i>0?(d.gOp/d.i*100):0,isP:m===curMes,fI:fc.ingProyectado||null,fG:fc.gastoProyectado||null};});
 
-  // Alias de clientes. Las claves se comparan normalizadas (sin acentos, minúsculas),
-  // así que "AlphaRealtors" y "Alpharealtors" ya no se separan en dos filas.
-  const CM={'capital park':'Urbano Park','encore':'Urbano Park','encore san angel':'Urbano Park','blossom gran park':'Blossom Grand Park'};
+  // Alias de clientes: ver CM arriba. Las claves se comparan normalizadas (sin acentos, minúsculas).
   const cliMrg={},cliNames={};
   Object.entries(cliM).forEach(([k,v])=>{
     let key=k,alias=null;
@@ -295,7 +347,7 @@ function processData(rows,forecast){
   });
   // Nombre a mostrar = la variante más usada (desempate: la más larga)
   const dispName=k=>{const v=cliNames[k]||{};const e=Object.entries(v).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length);return e.length?e[0][0]:k;};
-  const canon=k=>{for(const[a,c]of Object.entries(CM)){if(k.includes(a))return cliKey(c);}return k;};
+  const canon=canonCli;
   Object.entries(cliVar).forEach(([k,v])=>{const vs=Object.keys(v);if(vs.length>1)audit.cliVar.push({mes:'—',c:vs.join('  ·  '),m:cliM[k]||0,p:dispName(canon(k))});});
   const topCli=Object.entries(cliMrg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,total])=>({name:dispName(k),total:Math.round(total)}));
   const iBC=Object.entries(iCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tI>0?((v/tI)*100).toFixed(1):0}));
@@ -306,8 +358,8 @@ function processData(rows,forecast){
   const witG=Object.values(witPT).reduce((a,b)=>a+b,0);
 
   return{
-    t:{i:Math.round(tI),rec:Math.round(tRec),nvo:Math.round(tNuevo),gOp:Math.round(tGOp),nom:Math.round(tNom),ret:Math.round(tRet),imp:Math.round(tImp),pOp:Math.round(pOp),rNeto:Math.round(rNeto),margen:tI>0?(pOp/tI*100).toFixed(1):0,rNom:rNom.toFixed(1),rGOp:tI>0?(tGOp/tI*100).toFixed(1):0,mCon:mCon.length,topCli:topCli[0]||{name:'-',total:0},topCliPct:tI>0&&topCli[0]?(topCli[0].total/tI*100).toFixed(1):0,pctRec:tI>0?((tRec/tI)*100).toFixed(1):0},
-    mrr:{val:mrrEst,arr:mrrEst*12},monthly,alerts,iBC,eBC,topCli,audit,
+    t:{i:Math.round(tI),rec:Math.round(tRec),nvo:Math.round(tNuevo),gOp:Math.round(tGOp),nom:Math.round(tNom),ret:Math.round(tRet),imp:Math.round(tImp),pOp:Math.round(pOp),rNeto:Math.round(rNeto),retenido:Math.round(retenido),pass:Math.round(tPass),curQ:Math.ceil((curIdx+1)/3),margen:tI>0?(pOp/tI*100).toFixed(1):0,rNom:rNom.toFixed(1),rGOp:tI>0?(tGOp/tI*100).toFixed(1):0,mCon:mCon.length,topCli:topCli[0]||{name:'-',total:0},topCliPct:tI>0&&topCli[0]?(topCli[0].total/tI*100).toFixed(1):0,pctRec:tI>0?((tRec/tI)*100).toFixed(1):0},
+    mrr:{val:mrrEst,arr:mrrEst*12,meses:mCerr},monthly,alerts,iBC,eBC,topCli,audit,
     pay:{pp:payP,pt:payPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:payPM[m]||{}})),g:Math.round(payG)},
     wit:{pp:witP,pt:witPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:witPM[m]||{}})),g:Math.round(witG)}
   };
@@ -345,7 +397,7 @@ function render(data){
     <div class="kpi kpi-g"><div class="kpi-label">Ingresos YTD</div><div class="kpi-value" style="color:var(--green)">${fmt(d.i)}</div><div class="kpi-sub">${fu(d.i/USD_RATE)} · ${d.mCon} meses</div></div>
     <div class="kpi kpi-r"><div class="kpi-label">Gastos Operativos YTD</div><div class="kpi-value" style="color:var(--red)">${fmt(d.gOp)}</div><div class="kpi-sub"><span class="badge ${parseFloat(d.rGOp)<60?'ba':'br'}">${d.rGOp}% ingresos</span></div></div>
     <div class="kpi kpi-a"><div class="kpi-label">Profit Operativo YTD</div><div class="kpi-value" style="color:${pCol}">${fmt(d.pOp)}</div><div class="kpi-sub"><span class="badge ${d.pOp>=0?'bg':'br'}">Margen ${d.margen}%</span></div></div>
-    <div class="kpi kpi-a"><div class="kpi-label">Resultado Neto YTD</div><div class="kpi-value" style="color:${ntCol}">${fmt(d.rNeto)}</div><div class="kpi-sub">${fu(d.rNeto/USD_RATE)} · post impuestos</div></div>
+    <div class="kpi kpi-a"><div class="kpi-label">Resultado Neto YTD</div><div class="kpi-value" style="color:${ntCol}">${fmt(d.rNeto)}</div><div class="kpi-sub">Retenido tras retiros: <span style="color:${d.retenido>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">${fmt(d.retenido)}</span></div></div>
   </div>`;
 
   // MRR / Recurrente / Nómina %
@@ -354,7 +406,7 @@ function render(data){
       <div class="kpi-label">MRR Estimado</div>
       <div class="kpi-value" style="color:var(--accent);font-size:26px">${fmt(data.mrr.val)}</div>
       <div class="kpi-sub" style="margin-top:6px"><span class="badge bx">ARR ${fmt(data.mrr.arr)}</span></div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:8px;font-family:'JetBrains Mono',monospace">Prom. recurrente últimos 2 meses</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;font-family:'JetBrains Mono',monospace">${data.mrr.meses.length?'Prom. '+data.mrr.meses.map(m=>m.substring(0,3)).join(', ')+' (meses cerrados)':'Sin meses cerrados aún'}</div>
     </div>
     <div class="mrr-card">
       <div class="kpi-label">Recurrente YTD</div>
@@ -400,14 +452,16 @@ function render(data){
       <table class="pnl-t">
         <tr class="pnl-div"><td colspan="2">Del Profit Operativo</td></tr>
         <tr><td class="pl">Profit Operativo</td><td class="pv" style="color:${pCol}">${fmt(d.pOp)}</td></tr>
-        <tr class="pnl-div"><td colspan="2">Distribuciones &amp; Fiscal</td></tr>
-        <tr><td class="pl">Retiros de socios</td><td class="pv" style="color:var(--purple)">(${fmt(d.ret)})</td></tr>
         <tr><td class="pl">Impuestos pagados</td><td class="pv" style="color:var(--orange)">(${fmt(d.imp)})</td></tr>
         <tr class="pnl-tot"><td class="pl" style="color:var(--accent-light)">RESULTADO NETO</td><td class="pv" style="color:${ntCol};font-size:15px">${fmt(d.rNeto)}</td></tr>
+        <tr class="pnl-div"><td colspan="2">Distribuciones</td></tr>
+        <tr><td class="pl">Retiros de socios</td><td class="pv" style="color:var(--purple)">(${fmt(d.ret)})</td></tr>
+        <tr class="pnl-tot"><td class="pl" style="color:var(--text-1)">RETENIDO EN LA EMPRESA</td><td class="pv" style="color:${d.retenido>=0?'var(--green)':'var(--red)'};font-size:15px">${fmt(d.retenido)}</td></tr>
       </table>
+      ${d.retenido<0?`<div style="font-size:11px;color:var(--red);margin-top:8px">Los retiros superaron el resultado neto del año por ${fmt(-d.retenido)}.</div>`:''}
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="font-size:10px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Distribución del ingreso total</div>
-        ${[[d.gOp,'Gastos Operativos','var(--red)'],[d.ret,'Retiros Socios','var(--purple)'],[d.imp,'Impuestos','var(--orange)']].map(([v,label,color])=>{const p=d.i>0?(v/d.i*100).toFixed(0):0;return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><div style="font-size:12px;color:var(--text-2);width:160px">${label}</div><div style="flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${Math.min(p,100)}%;height:100%;background:${color};border-radius:3px"></div></div><div style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;width:28px;text-align:right">${p}%</div></div>`;}).join('')}
+        ${[[d.gOp,'Gastos Operativos','var(--red)'],[d.imp,'Impuestos','var(--orange)'],[d.ret,'Retiros Socios','var(--purple)'],[d.retenido,'Retenido','var(--green)']].map(([v,label,color])=>{const p=d.i>0?(v/d.i*100).toFixed(0):0;if(v<0)color='var(--red)';return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><div style="font-size:12px;color:var(--text-2);width:160px">${label}</div><div style="flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${Math.max(0,Math.min(p,100))}%;height:100%;background:${color};border-radius:3px"></div></div><div style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;width:28px;text-align:right">${p}%</div></div>`;}).join('')}
       </div>
     </div>
   </div>`;
@@ -418,7 +472,7 @@ function render(data){
   <div class="section-title"><h2>MRR vs One-Shot por Mes</h2><span class="badge bx" style="margin-left:4px">NUEVO</span><div class="line"></div></div>
   <div class="chart-card"><div class="chart-sub">Recurrente = base garantizada · One-Shot = adquisición y proyectos nuevos</div><canvas id="mrrChart" height="110"></canvas></div>
   <div class="section-title"><h2>Profit Operativo + Forecast</h2><div class="line"></div></div>
-  <div class="chart-card"><canvas id="profitChart" height="100"></canvas></div>
+  <div class="chart-card"><div class="chart-sub">* Mes en curso: datos parciales (punto hueco, línea punteada)</div><canvas id="profitChart" height="100"></canvas></div>
   <div class="section-title"><h2>% Nómina sobre Ingresos</h2><span class="badge br" style="margin-left:4px">SEMÁFORO</span><div class="line"></div></div>
   <div class="chart-card"><div class="chart-sub">Verde &lt;50% · Ámbar 50–65% · Rojo &gt;65% · Target: mantener bajo el 50%</div><canvas id="nomRatioChart" height="90"></canvas></div>`;
 
@@ -464,7 +518,7 @@ function render(data){
     <div class="health-card"><div class="health-label">Concentración de Clientes</div><div class="health-value" style="color:${topP>40?'var(--orange)':topP>30?'var(--accent)':'var(--green)'}">${d.topCliPct}%</div><div class="health-desc">${d.topCli.name} · ${topP>40?'riesgo alto':'riesgo moderado'}</div></div>
     <div class="health-card"><div class="health-label">Retiros vs Profit Op.</div><div class="health-value" style="color:${d.ret>d.pOp?'var(--red)':'var(--green)'}">${d.pOp>0?(d.ret/d.pOp*100).toFixed(0):0}%</div><div class="health-desc">${d.ret>d.pOp?'⚠ Retiros > profit':'En línea con profit'}</div></div>
     <div class="health-card"><div class="health-label">% Ingresos Recurrentes</div><div class="health-value" style="color:${parseFloat(d.pctRec)>50?'var(--green)':parseFloat(d.pctRec)>30?'var(--accent)':'var(--red)'}">${d.pctRec}%</div><div class="health-desc">Meta: &gt;60% para predecibilidad</div></div>
-    <div class="health-card"><div class="health-label">Meses Registrados</div><div class="health-value" style="color:var(--text-1)">${d.mCon} / 12</div><div class="health-desc">${d.mCon>=3?'Q'+Math.ceil(d.mCon/3)+' en curso':'Datos en progreso'}</div></div>
+    <div class="health-card"><div class="health-label">Meses Registrados</div><div class="health-value" style="color:var(--text-1)">${d.mCon} / 12</div><div class="health-desc">Q${d.curQ} en curso</div></div>
   </div>
   <div class="footer"><p>Trichter Consulting · Dashboard Financiero 2026 · Datos desde Google Sheets · Auto-refresh 5min</p></div>`;
 
@@ -479,7 +533,7 @@ function render(data){
   new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
 
   const hasF=data.monthly.some(m=>m.fI);
-  const pDS=[{label:'Profit Operativo',data:data.monthly.map(m=>m.pOp),borderColor:'#c59b3f',backgroundColor:'#c59b3f18',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#c59b3f',borderWidth:3}];
+  const pDS=[{label:'Profit Operativo',data:data.monthly.map(m=>m.pOp),borderColor:'#c59b3f',backgroundColor:'#c59b3f18',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:data.monthly.map(m=>m.isP?'#111111':'#c59b3f'),borderWidth:3,segment:{borderDash:c=>data.monthly[c.p1DataIndex]?.isP?[6,4]:undefined}}];
   if(hasF)pDS.push({label:'Forecast',data:data.monthly.map(m=>m.fI&&m.fG?m.fI-m.fG:null),borderColor:'#5a9fd4',fill:false,tension:0.3,borderDash:[6,4],pointRadius:4,borderWidth:2});
   new Chart(document.getElementById('profitChart'),{type:'line',data:{labels:bL,datasets:pDS},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
 
