@@ -368,7 +368,7 @@ function processData(rows,forecast,config,ventas){
   const iniMes=new Date(now.getFullYear(),curIdx,1);
   const hasFPC=ventas.some(v=>String(v['Fecha Prevista Cierre']||'').trim());
   const abiertas=ventas.filter(v=>{const e=sa(String(v.Etapa||'')).toUpperCase();
-    return !/\((PERDIDO|ABANDONADO)\)/.test(e)&&!/FIRMO/.test(e)&&!String(v['Fecha Firma']||'').trim();})
+    return !/\((PERDIDO|ABANDONADO)\)/.test(e)&&!/FIRMO|NO CALIFICA/.test(e)&&!String(v['Fecha Firma']||'').trim();})
     .map(v=>{const fd=pDate(v.Fecha),fc=pDate(v['Fecha Prevista Cierre']),monto=pm(v['Monto Cerrado']);
       return{nombre:String(v.Nombre||'').trim(),vendedor:String(v.Asignado||'').trim()||'—',etapa:String(v.Etapa||'').trim(),monto,
         dias:fd?Math.floor((now-fd)/864e5):null,cierre:fc,pond:monto*prob,
