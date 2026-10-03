@@ -259,8 +259,8 @@ function renderAudit(a){
   return h+`</div>`;
 }
 
-function processData(rows,forecast,config){
-  forecast=forecast||{};config=config||{};
+function processData(rows,forecast,config,ventas){
+  forecast=forecast||{};config=config||{};ventas=ventas||[];
   let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0,tPass=0;
   const recList=[];
   const MM={},iCat={},eCat={},cliM={},cliVar={},payPM={},witPM={},payPT={},witPT={};
@@ -360,11 +360,35 @@ function processData(rows,forecast,config){
   const egPendCfg=typeof config.egresosPend==='number'?config.egresosPend:null;
   const egresosPend=egPendCfg!==null?egPendCfg:Math.max(0,gastosMed-gastosMes);
   const caja=typeof config.caja==='number'?config.caja:null;
+  // ---- Ventas probables (hoja VENTAS) ----
+  // Oportunidades abiertas con "Fecha Prevista Cierre" de GHL: las del mes en curso suman a la
+  // proyección del mes y las de meses siguientes a esos meses, siempre × la probabilidad de CONFIG.
+  // Sin esa columna todavía sincronizada, se usa la etapa EN NEGOCIACIÓN como respaldo.
+  const prob=typeof config.prob==='number'&&config.prob>0&&config.prob<=1?config.prob:0.2;
+  const iniMes=new Date(now.getFullYear(),curIdx,1);
+  const hasFPC=ventas.some(v=>String(v['Fecha Prevista Cierre']||'').trim());
+  const abiertas=ventas.filter(v=>{const e=sa(String(v.Etapa||'')).toUpperCase();
+    return !/\((PERDIDO|ABANDONADO)\)/.test(e)&&!/FIRMO/.test(e)&&!String(v['Fecha Firma']||'').trim();})
+    .map(v=>{const fd=pDate(v.Fecha),fc=pDate(v['Fecha Prevista Cierre']),monto=pm(v['Monto Cerrado']);
+      return{nombre:String(v.Nombre||'').trim(),vendedor:String(v.Asignado||'').trim()||'—',etapa:String(v.Etapa||'').trim(),monto,
+        dias:fd?Math.floor((now-fd)/864e5):null,cierre:fc,pond:monto*prob,
+        mesCierre:fc&&fc.getFullYear()===now.getFullYear()?MESES_ORDER[fc.getMonth()]:null};})
+    .filter(v=>v.monto>0);
+  let negoc,vencidas=[],sinFecha=0;
+  if(hasFPC){
+    negoc=abiertas.filter(v=>v.cierre&&v.cierre>=iniMes&&v.cierre.getFullYear()===now.getFullYear());
+    vencidas=abiertas.filter(v=>v.cierre&&v.cierre<iniMes);
+    sinFecha=abiertas.filter(v=>!v.cierre).length;
+  }else negoc=abiertas.filter(v=>sa(v.etapa).toUpperCase()==='EN NEGOCIACION').map(v=>({...v,mesCierre:curMes}));
+  negoc.sort((a,b)=>(a.cierre||0)-(b.cierre||0)||b.monto-a.monto);
+  const ventasMes={};negoc.forEach(v=>{if(v.mesCierre)ventasMes[v.mesCierre]=(ventasMes[v.mesCierre]||0)+v.pond;});
+  const ventasProb=ventasMes[curMes]||0;
   const proj={
-    cur:{mes:curMes,i:(MM[curMes]?.i||0)+cobrosPend,g:gastosMes+egresosPend},
-    next:MESES_ORDER.slice(curIdx+1).map(m=>({mes:m,i:baseRec,g:gastosMed})),
+    cur:{mes:curMes,i:(MM[curMes]?.i||0)+cobrosPend+ventasProb,g:gastosMes+egresosPend},
+    next:MESES_ORDER.slice(curIdx+1).map(m=>({mes:m,i:baseRec+(ventasMes[m]||0),vp:ventasMes[m]||0,g:gastosMed})),
     cobros,cobrosPend,egresosPend,egPendCfg:egPendCfg!==null,gastosMed,baseRec,
-    caja,fechaCaja:config.fecha||null,cajaProy:caja!==null?caja+cobrosPend-egresosPend:null
+    negoc,prob,ventasProb,hasFPC,vencidas,sinFecha,
+    caja,fechaCaja:config.fecha||null,cajaProy:caja!==null?caja+cobrosPend+ventasProb-egresosPend:null
   };
   proj.cur.p=proj.cur.i-proj.cur.g;proj.next.forEach(x=>{x.p=x.i-x.g;});
 
@@ -419,8 +443,10 @@ function renderCaja(p){
   let h=`<div class="section-title"><h2>Caja y cierre de ${p.cur.mes}</h2><div class="line"></div></div><div class="mrr-grid">`;
   h+=card('Caja hoy',cfg?fmt(p.caja):'—','var(--text-1)',cfg?(p.fechaCaja?'Saldo al '+fmtD(pDate(p.fechaCaja)):'Saldo cargado en CONFIG'):'Cargá el saldo en CONFIG, celda I2');
   h+=card('Cobros pendientes',fmt(p.cobrosPend),'var(--green)',`${p.cobros.filter(c=>c.pendiente>0).length} clientes recurrentes que aún no pagan este mes`);
+  const delMes=p.negoc.filter(v=>v.mesCierre===p.cur.mes);
+  h+=card('Ventas probables',fmt(p.ventasProb),'var(--blue)',`${Math.round(p.prob*100)}% de ${fmt(delMes.reduce((s,v)=>s+v.monto,0))} ${p.hasFPC?'con cierre previsto en '+p.cur.mes:'en negociación'} (${delMes.length} oportunidades)`);
   h+=card('Egresos pendientes',fmt(p.egresosPend),'var(--red)',p.egPendCfg?'Cargado en CONFIG':`Estimado: gasto típico mensual (${fmt(p.gastosMed)}) menos lo ya registrado`);
-  h+=card('Caja proyectada al cierre',cfg?fmt(p.cajaProy):'—',cfg?(p.cajaProy>=0?'var(--accent)':'var(--red)'):'var(--text-3)',cfg?'Caja hoy + cobros pendientes − egresos pendientes':'Necesita el saldo de caja');
+  h+=card('Caja proyectada al cierre',cfg?fmt(p.cajaProy):'—',cfg?(p.cajaProy>=0?'var(--accent)':'var(--red)'):'var(--text-3)',cfg?`Caja hoy + cobros pendientes + ventas probables − egresos pendientes. Sin ventas nuevas: ${fmt(p.cajaProy-p.ventasProb)}`:'Necesita el saldo de caja');
   h+=`</div>`;
   const rows=p.cobros.filter(c=>c.esperado>0);
   if(rows.length){
@@ -428,6 +454,18 @@ function renderCaja(p){
       <tr class="pnl-div"><td>Cliente</td><td class="pv">Esperado</td><td class="pv">Cobrado</td><td class="pv">Pendiente</td></tr>`;
     rows.forEach(c=>{h+=`<tr><td class="pl">${c.name}</td><td class="pv" style="color:var(--text-2)">${fmt(c.esperado)}</td><td class="pv" style="color:var(--text-2)">${c.cobrado?fmt(c.cobrado):'—'}</td><td class="pv" style="color:${c.pendiente>0?'var(--green)':'var(--text-3)'}">${c.pendiente>0?fmt(c.pendiente):'cobrado'}</td></tr>`;});
     h+=`<tr class="pnl-tot"><td class="pl" style="color:var(--green)">TOTAL</td><td class="pv">${fmt(p.baseRec)}</td><td class="pv">${fmt(p.baseRec-p.cobrosPend)}</td><td class="pv" style="color:var(--green)">${fmt(p.cobrosPend)}</td></tr></table></div>`;
+  }
+  if(p.negoc.length||p.vencidas.length||p.sinFecha){
+    const fuente=p.hasFPC?'oportunidades abiertas con fecha prevista de cierre este año (GHL)':'oportunidades en EN NEGOCIACIÓN';
+    h+=`<div class="chart-card"><div class="chart-sub">Pipeline proyectado: ${fuente}. Se proyecta el ${Math.round(p.prob*100)}% de cada una en su mes de cierre; la probabilidad se cambia en CONFIG, celda L2</div><table class="pnl-t">
+      <tr class="pnl-div"><td>Oportunidad</td><td class="pv">Etapa</td><td class="pv">Vendedor</td><td class="pv">Cierre previsto</td><td class="pv">Monto</td><td class="pv">Proyectado</td></tr>`;
+    p.negoc.forEach(v=>{h+=`<tr><td class="pl">${v.nombre}</td><td class="pv" style="color:var(--text-3);font-size:11px">${v.etapa}</td><td class="pv" style="color:var(--text-2)">${v.vendedor}</td><td class="pv" style="color:${v.mesCierre===p.cur.mes?'var(--text-1)':'var(--text-3)'}">${v.cierre?fmtD(v.cierre):v.mesCierre}</td><td class="pv" style="color:var(--text-2)">${fmt(v.monto)}</td><td class="pv" style="color:var(--blue)">${fmt(v.pond)}</td></tr>`;});
+    h+=`<tr class="pnl-tot"><td class="pl" style="color:var(--blue)">TOTAL</td><td></td><td></td><td></td><td class="pv">${fmt(p.negoc.reduce((s,v)=>s+v.monto,0))}</td><td class="pv" style="color:var(--blue)">${fmt(p.negoc.reduce((s,v)=>s+v.pond,0))}</td></tr></table>`;
+    const avisos=[];
+    if(p.vencidas.length)avisos.push(`${p.vencidas.length} oportunidad(es) abiertas con fecha de cierre ya vencida (${p.vencidas.map(v=>v.nombre).join(', ')}): actualizar la fecha o marcarlas como perdidas en GHL`);
+    if(p.sinFecha)avisos.push(`${p.sinFecha} oportunidad(es) abiertas sin fecha prevista de cierre: no se proyectan`);
+    if(avisos.length)h+=`<div style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.6">${avisos.join('<br>')}</div>`;
+    h+=`</div>`;
   }
   return h;
 }
@@ -537,7 +575,7 @@ function render(data){
   <div class="section-title"><h2>MRR vs One-Shot por Mes</h2><span class="badge bx" style="margin-left:4px">NUEVO</span><div class="line"></div></div>
   <div class="chart-card"><div class="chart-sub">Recurrente = base garantizada · One-Shot = adquisición y proyectos nuevos</div><canvas id="mrrChart" height="110"></canvas></div>
   <div class="section-title"><h2>Profit Operativo + Proyección</h2><div class="line"></div></div>
-  <div class="chart-card"><div class="chart-sub">Línea punteada: mes en curso proyectado con los cobros recurrentes pendientes, y meses siguientes con la base recurrente actual (${fmt(data.proj.baseRec)}) menos el gasto típico (${fmt(data.proj.gastosMed)})</div><canvas id="profitChart" height="100"></canvas></div>
+  <div class="chart-card"><div class="chart-sub">Línea punteada: mes en curso proyectado con los cobros recurrentes pendientes y las ventas probables; meses siguientes con la base recurrente actual (${fmt(data.proj.baseRec)}) más las ventas probables de ese mes, menos el gasto típico (${fmt(data.proj.gastosMed)})</div><canvas id="profitChart" height="100"></canvas></div>
   <div class="section-title"><h2>% Nómina sobre Ingresos</h2><span class="badge br" style="margin-left:4px">SEMÁFORO</span><div class="line"></div></div>
   <div class="chart-card"><div class="chart-sub">Verde &lt;50% · Ámbar 50–65% · Rojo &gt;65% · Target: mantener bajo el 50%${d.preCorte?` · ${d.curMes} se muestra a partir del día ${CUTOFF_DAY}`:''}</div><canvas id="nomRatioChart" height="90"></canvas></div>`;
 
@@ -593,16 +631,17 @@ function render(data){
   Chart.defaults.color='#5a5348';Chart.defaults.borderColor='#1f1d1a33';Chart.defaults.font.family="'JetBrains Mono',monospace";Chart.defaults.font.size=11;
   const bL=data.monthly.map(m=>m.isP?m.mes+'*':m.mes);
 
-  const P=data.proj;const pendI=data.monthly.map(m=>m.isP?Math.round(P.cobrosPend):null),pendG=data.monthly.map(m=>m.isP?Math.round(P.egresosPend):null);
+  const P=data.proj;const pendI=data.monthly.map(m=>m.isP?Math.round(P.cobrosPend):null),probV=data.monthly.map(m=>m.isP?Math.round(P.ventasProb):null),pendG=data.monthly.map(m=>m.isP?Math.round(P.egresosPend):null);
   const tipFmt={callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}};
   new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:bL,datasets:[
     {label:'Ingresos',data:data.monthly.map(m=>m.i),backgroundColor:'#3dbb7d',borderRadius:5,barPercentage:0.75,stack:'i'},
     {label:'Cobros pendientes',data:pendI,backgroundColor:'#3dbb7d40',borderColor:'#3dbb7d',borderWidth:1,borderDash:[4,3],borderRadius:5,barPercentage:0.75,stack:'i'},
+    {label:'Ventas probables',data:probV,backgroundColor:'#5a9fd440',borderColor:'#5a9fd4',borderWidth:1,borderRadius:5,barPercentage:0.75,stack:'i'},
     {label:'Gastos Op.',data:data.monthly.map(m=>m.gOp),backgroundColor:'#e04545',borderRadius:5,barPercentage:0.75,stack:'g'},
     {label:'Egresos pendientes',data:pendG,backgroundColor:'#e0454540',borderColor:'#e04545',borderWidth:1,borderRadius:5,barPercentage:0.75,stack:'g'}]},
     options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}},tooltip:tipFmt},scales:{y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{stacked:true,grid:{display:false}}}}});
 
-  new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'},{label:'Recurrente pendiente',data:pendI,backgroundColor:'#c59b3f40',borderColor:'#c59b3f',borderWidth:1,borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
+  new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'},{label:'Recurrente pendiente',data:pendI,backgroundColor:'#c59b3f40',borderColor:'#c59b3f',borderWidth:1,borderRadius:4,stack:'s'},{label:'Ventas probables',data:probV,backgroundColor:'#5a9fd440',borderColor:'#5a9fd4',borderWidth:1,borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
 
   // Profit: meses cerrados reales + mes en curso y siguientes proyectados
   const pM=data.monthly,curI=pM.findIndex(m=>m.isP);
@@ -638,17 +677,18 @@ function render(data){
 async function loadDashboard(){
   document.getElementById('app').innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>';
   try{
-    const[rows,fRows,cRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST'),fetchSheet('CONFIG','I1:K2').catch(()=>[])]);
-    // CONFIG!I1:K2 → Caja actual (MXN) | Fecha de la caja | Egresos pendientes del mes (MXN)
+    const[rows,fRows,cRows,vRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST'),fetchSheet('CONFIG','I1:L2').catch(()=>[]),fetchSheet('VENTAS').catch(()=>[])]);
+    // CONFIG!I1:L2 → Caja actual (MXN) | Fecha de la caja | Egresos pendientes del mes (MXN) | Probabilidad de cierre
     const config={};const c0=cRows[0]||{};
     Object.entries(c0).forEach(([k,v])=>{const kk=sa(k).toLowerCase();if(v===''||v===null)return;
       if(kk.includes('caja actual'))config.caja=typeof v==='number'?v:pm(v);
       else if(kk.includes('fecha'))config.fecha=v;
-      else if(kk.includes('egresos pendientes'))config.egresosPend=typeof v==='number'?v:pm(v);});
+      else if(kk.includes('egresos pendientes'))config.egresosPend=typeof v==='number'?v:pm(v);
+      else if(kk.includes('probabilidad')){const n=typeof v==='number'?v:pm(v);config.prob=n>1?n/100:n;}});
     const valid=rows.filter(r=>r.Tipo);
     const forecast={};
     fRows.forEach(r=>{const mes=(r.Mes||'').trim();const c=(r.Concepto||'').trim();if(!mes)return;if(!forecast[mes])forecast[mes]={};const p=typeof r.Proyectado==='number'?r.Proyectado:pm(r.Proyectado);if(c==='Total Ingresos')forecast[mes].ingProyectado=p;if(c==='Total Gastos')forecast[mes].gastoProyectado=p;});
-    render(processData(valid,forecast,config));
+    render(processData(valid,forecast,config,vRows));
   }catch(err){document.getElementById('app').innerHTML=`<div class="loading"><p style="color:var(--red);font-size:16px;margin-bottom:12px">Error cargando datos</p><p style="color:var(--text-2);font-size:13px">${err.message}</p><button class="btn btn-accent" style="margin-top:20px" onclick="loadDashboard()">Reintentar</button></div>`;}
 }
 loadDashboard();
