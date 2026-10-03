@@ -107,7 +107,12 @@ const SHEET_NAME='REGISTRO';
 const USD_RATE=16.5;
 const MESES_ORDER=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const COLORS=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a'];
-const PC=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060'];
+const PC=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a','#d4af5a','#9fb87e'];
+// Los cobros de clientes entran hasta el día 10: antes de esa fecha el mes en curso
+// no entra en los acumulados ni en los ratios, y se muestra como proyección.
+const CUTOFF_DAY=10;
+const SHOW_ALERTS=false;   // banners del encabezado
+const SHOW_AUDIT=false;    // panel de Auditoría de Datos (la lógica sigue activa por si se reactiva)
 const NON_OP=['Retiro Socio','Impuestos'];
 const REC_CATS=['Software Recurrente'];
 const REC_CATS_N=['software recurrente','leads on demand','leads high quality'];
@@ -119,7 +124,7 @@ const ONESHOT_SUBS=['set-up','set up','setup','anticipo','saldo','diagnostico','
 const NOM_CATS=['nomina','sueldos','honorarios'];
 const CAT_BASURA=['','egreso','otro gasto','otro','gasto','-'];
 const RET_KEYS=['retiro','ganancias','distribucion','caja de ahorro','caja de ganancias','reponer a caja','prestamo de taos','cuota de taos'];
-const PA={'eugenia':'Eugenia','euge':'Eugenia','peronace':'Eugenia','jesus':'Jesus','jesús':'Jesus','leal':'Jesus','axel':'Axel','benjamin':'Benjamin','benjamín':'Benjamin','benja':'Benjamin','cristian':'Cristian','christian':'Cristian','quimey':'Quimey','moreira':'Quimey','liliana':'Liliana','lili':'Liliana','daniel':'Daniel','agostina':'Agostina','agos':'Agostina','agus':'Agostina'};
+const PA={'eugenia':'Eugenia','euge':'Eugenia','peronace':'Eugenia','jesus':'Jesus','jesús':'Jesus','leal':'Jesus','axel':'Axel','benjamin':'Benjamin','benjamín':'Benjamin','benja':'Benjamin','cristian':'Cristian','christian':'Cristian','quimey':'Quimey','moreira':'Quimey','liliana':'Liliana','lili':'Liliana','daniel':'Daniel','agostina':'Agostina','agos':'Agostina','agus':'Agostina','luis':'Luis','pastran':'Luis'};
 // Campos donde buscar la persona, en orden de confianza. 'Notas' se usa solo como último recurso
 // y se ignora si trae la firma automática del bot ("Via Telegram (Axel Álvarez)"), que antes
 // mandaba a Axel toda fila sin nombre reconocido.
@@ -198,7 +203,7 @@ function pareceRetiro(r){
   return RET_KEYS.some(k=>t.includes(k));}
 
 function parseGviz(text){const s=text.indexOf('{'),e=text.lastIndexOf('}');if(s===-1||e===-1)return[];const d=JSON.parse(text.substring(s,e+1));if(!d.table||!d.table.cols||!d.table.rows)return[];const h=d.table.cols.map(c=>(c.label||c.id||'').trim());return d.table.rows.map(row=>{const o={};row.c.forEach((c,i)=>{if(!h[i])return;if(c===null){o[h[i]]='';return;}o[h[i]]=(c.v===null||c.v===undefined)?(c.f||''):typeof c.v==='number'?c.v:String(c.v);});return o;});}
-async function fetchSheet(sh){const url=`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sh)}`;const r=await fetch(url);return parseGviz(await r.text());}
+async function fetchSheet(sh,range){const url=`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sh)}`+(range?`&range=${range}&headers=1`:'');const r=await fetch(url);return parseGviz(await r.text());}
 
 // Panel de calidad de datos: hace visibles los errores que antes se absorbían en silencio.
 function renderAudit(a){
@@ -254,13 +259,15 @@ function renderAudit(a){
   return h+`</div>`;
 }
 
-function processData(rows,forecast){
-  forecast=forecast||{};
+function processData(rows,forecast,config){
+  forecast=forecast||{};config=config||{};
   let tI=0,tRec=0,tNuevo=0,tGOp=0,tRet=0,tImp=0,tNom=0,tPass=0;
+  const recList=[];
   const MM={},iCat={},eCat={},cliM={},cliVar={},payPM={},witPM={},payPT={},witPT={};
   const audit={dupIng:[],futuras:[],sinPersona:[],catMala:[],tarjeta:[],retEnNom:[],retSinSocio:[],passThru:[],cliVar:[],catFuera:[],ambiguas:[],dups:[],mesFecha:[]};
   const seen={},ingList=[];
   const now=new Date(),curIdx=now.getMonth(),curMes=MESES_ORDER[curIdx];
+  const preCorte=now.getDate()<CUTOFF_DAY;
   const hoy=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59);
   rows.forEach(r=>{
     const mes=String(r.Mes||'').trim();if(!mes)return;
@@ -279,25 +286,30 @@ function processData(rows,forecast){
     if(CAT_BASURA.includes(cn))audit.catMala.push({mes,cat,sub:r['Subcategoría']||r['Subcategoria']||'',c:conc,m});
     else if(!CATALOGO.includes(cn))audit.catFuera.push({mes,c:conc,m,nota:CAT_ALIAS[cn]?`${cat} → ${CAT_ALIAS[cn]}`:`"${cat}" no está en el catálogo`});
     if(!MM[mes])MM[mes]={i:0,rec:0,nvo:0,gOp:0,nom:0,ret:0,imp:0,pass:0};
+    // Antes del día de corte, el mes en curso no suma en acumulados ni ratios (sí en los gráficos)
+    const Y=!(mIdx===curIdx&&preCorte);
     if(r.Tipo==='Ingreso'){
       // Pauta que paga el cliente: no es facturación de la agencia
-      if(PASS_IN.includes(cn)){tPass+=m;MM[mes].pass+=m;audit.passThru.push({mes,c:conc,m,nota:r.Cliente?String(r.Cliente).trim():'sin cliente'});return;}
-      tI+=m;MM[mes].i+=m;iCat[cat]=(iCat[cat]||0)+m;
+      if(PASS_IN.includes(cn)){if(Y)tPass+=m;MM[mes].pass+=m;audit.passThru.push({mes,c:conc,m,nota:r.Cliente?String(r.Cliente).trim():'sin cliente'});return;}
+      MM[mes].i+=m;if(Y){tI+=m;iCat[cat]=(iCat[cat]||0)+m;}
       const cli=r.Cliente&&String(r.Cliente).trim();
-      if(cli){const k=cliKey(cli);cliM[k]=(cliM[k]||0)+m;if(!cliVar[k])cliVar[k]={};cliVar[k][cli]=(cliVar[k][cli]||0)+1;ingList.push({mes,fd,k:canonCli(k),c:conc,m});}
-      if(isRec(r)){tRec+=m;MM[mes].rec+=m;}else{tNuevo+=m;MM[mes].nvo+=m;}
+      if(cli){const k=cliKey(cli);if(!cliVar[k])cliVar[k]={};cliVar[k][cli]=(cliVar[k][cli]||0)+1;if(Y)cliM[k]=(cliM[k]||0)+m;ingList.push({mes,fd,k:canonCli(k),c:conc,m});}
+      if(isRec(r)){MM[mes].rec+=m;if(Y)tRec+=m;
+        const rk=cli?canonCli(cliKey(cli)):/rebilling|whatsapp/.test(sa(conc+' '+(r['Subcategoría']||r['Subcategoria']||'')).toLowerCase())?'~rebilling':'~otros';
+        recList.push({mes,k:rk,m});}
+      else{MM[mes].nvo+=m;if(Y)tNuevo+=m;}
     }else if(r.Tipo==='Egreso'){
       const txt=sa(conc+' '+String(r['Subcategoría']||r['Subcategoria']||'')).toLowerCase().trim();
       if(!esNomina(r)&&(CARD_RE.test(txt)||CARD_RE.test(sa(conc).toLowerCase())))audit.tarjeta.push({mes,c:conc,m,nota:cat});
-      if(cat==='Retiro Socio'){tRet+=m;MM[mes].ret+=m;const p=fp(r);if(!p)audit.retSinSocio.push({mes,c:conc,m});const pp=p||'Sin identificar';if(!witPM[mes])witPM[mes]={};witPM[mes][pp]=(witPM[mes][pp]||0)+m;witPT[pp]=(witPT[pp]||0)+m;}
-      else if(cat==='Impuestos'){tImp+=m;MM[mes].imp+=m;}
+      if(cat==='Retiro Socio'){if(Y)tRet+=m;MM[mes].ret+=m;const p=fp(r);if(!p)audit.retSinSocio.push({mes,c:conc,m});const pp=p||'Sin identificar';if(!witPM[mes])witPM[mes]={};witPM[mes][pp]=(witPM[mes][pp]||0)+m;witPT[pp]=(witPT[pp]||0)+m;}
+      else if(cat==='Impuestos'){if(Y)tImp+=m;MM[mes].imp+=m;}
       else{
         const nomFlag=esNomina(r);
         // Las filas rescatadas (Categoria="Egreso" o honorarios del equipo) se muestran como Nómina
         const catShow=nomFlag&&(CAT_BASURA.includes(cn)||cn==='servicios profesionales')?'Nómina':INT_RE.test(txt)?'Gastos financieros':catShowName(cat);
-        tGOp+=m;MM[mes].gOp+=m;eCat[catShow]=(eCat[catShow]||0)+m;
+        MM[mes].gOp+=m;if(Y){tGOp+=m;eCat[catShow]=(eCat[catShow]||0)+m;}
         if(nomFlag){
-          tNom+=m;MM[mes].nom+=m;
+          MM[mes].nom+=m;if(Y)tNom+=m;
           const p=fp(r)||'Sin identificar';
           if(!payPM[mes])payPM[mes]={};payPM[mes][p]=(payPM[mes][p]||0)+m;payPT[p]=(payPT[p]||0)+m;
           if(p==='Sin identificar')audit.sinPersona.push({mes,c:conc,m});
@@ -325,6 +337,36 @@ function processData(rows,forecast){
   // con fecha futura metía un mes vacío en el promedio y partía el MRR a la mitad.
   const mCerr=mCon.filter(m=>MESES_ORDER.indexOf(m)<curIdx).slice(-3);
   const mrrEst=mCerr.length>0?Math.round(mCerr.reduce((s,m)=>s+(MM[m]?.rec||0),0)/mCerr.length):0;
+  const mYTD=mCon.filter(m=>!(m===curMes&&preCorte));
+
+  // ---- Cobros esperados del mes en curso, cliente por cliente ----
+  // Base: mediana de lo que cada cliente recurrente pagó en los últimos 3 meses cerrados
+  // (la mediana evita que un mes con pago doble o atrasado infle la expectativa).
+  // Cliente activo = pagó en el último mes cerrado o en al menos 2 de los 3.
+  const med=a=>{const x=[...a].sort((p,q)=>p-q),n=x.length;return n?(n%2?x[(n-1)/2]:(x[n/2-1]+x[n/2])/2):0;};
+  const recBy={};recList.forEach(x=>{const o=recBy[x.k]=recBy[x.k]||{};o[x.mes]=(o[x.mes]||0)+x.m;});
+  const lastClosed=mCerr[mCerr.length-1];
+  const cobros=[];
+  Object.entries(recBy).forEach(([k,byM])=>{
+    const vals=mCerr.map(m=>byM[m]||0).filter(v=>v>0);
+    if(!vals.length||!((byM[lastClosed]||0)>0||vals.length>=2))return;
+    const esperado=med(vals),cobrado=byM[curMes]||0;
+    cobros.push({k,esperado,cobrado,pendiente:Math.max(0,esperado-cobrado)});
+  });
+  const baseRec=cobros.reduce((s,c)=>s+c.esperado,0);
+  const cobrosPend=cobros.reduce((s,c)=>s+c.pendiente,0);
+  const gastosMed=med(mCerr.map(m=>MM[m]?.gOp||0));
+  const gastosMes=MM[curMes]?.gOp||0;
+  const egPendCfg=typeof config.egresosPend==='number'?config.egresosPend:null;
+  const egresosPend=egPendCfg!==null?egPendCfg:Math.max(0,gastosMed-gastosMes);
+  const caja=typeof config.caja==='number'?config.caja:null;
+  const proj={
+    cur:{mes:curMes,i:(MM[curMes]?.i||0)+cobrosPend,g:gastosMes+egresosPend},
+    next:MESES_ORDER.slice(curIdx+1).map(m=>({mes:m,i:baseRec,g:gastosMed})),
+    cobros,cobrosPend,egresosPend,egPendCfg:egPendCfg!==null,gastosMed,baseRec,
+    caja,fechaCaja:config.fecha||null,cajaProy:caja!==null?caja+cobrosPend-egresosPend:null
+  };
+  proj.cur.p=proj.cur.i-proj.cur.g;proj.next.forEach(x=>{x.p=x.i-x.g;});
 
   const alerts=[];
   const cd=MM[curMes];
@@ -333,7 +375,7 @@ function processData(rows,forecast){
   if(audit.futuras.length)alerts.push({t:'amber',m:`${audit.futuras.length} fila(s) con fecha futura por ${fmt(audit.futuras.reduce((s,x)=>s+x.m,0))} excluidas de los totales`});
   if(tRet>pOp&&pOp>0)alerts.push({t:'amber',m:`Retiros de socios (${fmt(tRet)}) superan profit operativo YTD (${fmt(pOp)})`});
 
-  const monthly=MESES_ORDER.filter(m=>MM[m]).map(m=>{const d=MM[m];const fc=forecast[m]||{};return{mes:m.substring(0,3),mesFull:m,i:Math.round(d.i),rec:Math.round(d.rec),nvo:Math.round(d.nvo),gOp:Math.round(d.gOp),nom:Math.round(d.nom),ret:Math.round(d.ret),imp:Math.round(d.imp),pOp:Math.round(d.i-d.gOp),rNom:d.i>0?(d.nom/d.i*100):0,rGOp:d.i>0?(d.gOp/d.i*100):0,isP:m===curMes,fI:fc.ingProyectado||null,fG:fc.gastoProyectado||null};});
+  const monthly=MESES_ORDER.filter(m=>MM[m]).map(m=>{const d=MM[m];const fc=forecast[m]||{};return{mes:m.substring(0,3),mesFull:m,i:Math.round(d.i),rec:Math.round(d.rec),nvo:Math.round(d.nvo),gOp:Math.round(d.gOp),nom:Math.round(d.nom),ret:Math.round(d.ret),imp:Math.round(d.imp),pOp:Math.round(d.i-d.gOp),rNom:d.i>0?(d.nom/d.i*100):0,rGOp:d.i>0?(d.gOp/d.i*100):0,isP:m===curMes,hideRatio:m===curMes&&preCorte,fI:fc.ingProyectado||null,fG:fc.gastoProyectado||null};});
 
   // Alias de clientes: ver CM arriba. Las claves se comparan normalizadas (sin acentos, minúsculas).
   const cliMrg={},cliNames={};
@@ -349,6 +391,8 @@ function processData(rows,forecast){
   const dispName=k=>{const v=cliNames[k]||{};const e=Object.entries(v).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length);return e.length?e[0][0]:k;};
   const canon=canonCli;
   Object.entries(cliVar).forEach(([k,v])=>{const vs=Object.keys(v);if(vs.length>1)audit.cliVar.push({mes:'—',c:vs.join('  ·  '),m:cliM[k]||0,p:dispName(canon(k))});});
+  cobros.forEach(c=>{c.name=c.k==='~rebilling'?'Rebilling WhatsApp':c.k==='~otros'?'Otros recurrentes':dispName(c.k);});
+  cobros.sort((a,b)=>b.pendiente-a.pendiente||b.esperado-a.esperado);
   const topCli=Object.entries(cliMrg).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,total])=>({name:dispName(k),total:Math.round(total)}));
   const iBC=Object.entries(iCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tI>0?((v/tI)*100).toFixed(1):0}));
   const eBC=Object.entries(eCat).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({name:n,value:Math.round(v),pct:tGOp>0?((v/tGOp)*100).toFixed(1):0}));
@@ -358,8 +402,8 @@ function processData(rows,forecast){
   const witG=Object.values(witPT).reduce((a,b)=>a+b,0);
 
   return{
-    t:{i:Math.round(tI),rec:Math.round(tRec),nvo:Math.round(tNuevo),gOp:Math.round(tGOp),nom:Math.round(tNom),ret:Math.round(tRet),imp:Math.round(tImp),pOp:Math.round(pOp),rNeto:Math.round(rNeto),retenido:Math.round(retenido),pass:Math.round(tPass),curQ:Math.ceil((curIdx+1)/3),margen:tI>0?(pOp/tI*100).toFixed(1):0,rNom:rNom.toFixed(1),rGOp:tI>0?(tGOp/tI*100).toFixed(1):0,mCon:mCon.length,topCli:topCli[0]||{name:'-',total:0},topCliPct:tI>0&&topCli[0]?(topCli[0].total/tI*100).toFixed(1):0,pctRec:tI>0?((tRec/tI)*100).toFixed(1):0},
-    mrr:{val:mrrEst,arr:mrrEst*12,meses:mCerr},monthly,alerts,iBC,eBC,topCli,audit,
+    t:{i:Math.round(tI),rec:Math.round(tRec),nvo:Math.round(tNuevo),gOp:Math.round(tGOp),nom:Math.round(tNom),ret:Math.round(tRet),imp:Math.round(tImp),pOp:Math.round(pOp),rNeto:Math.round(rNeto),retenido:Math.round(retenido),pass:Math.round(tPass),curQ:Math.ceil((curIdx+1)/3),margen:tI>0?(pOp/tI*100).toFixed(1):0,rNom:rNom.toFixed(1),rGOp:tI>0?(tGOp/tI*100).toFixed(1):0,mCon:mYTD.length,hastaMes:mYTD[mYTD.length-1]||'',preCorte,curMes,topCli:topCli[0]||{name:'-',total:0},topCliPct:tI>0&&topCli[0]?(topCli[0].total/tI*100).toFixed(1):0,pctRec:tI>0?((tRec/tI)*100).toFixed(1):0},
+    mrr:{val:mrrEst,arr:mrrEst*12,meses:mCerr},monthly,alerts,proj,forecast,iBC,eBC,topCli,audit,
     pay:{pp:payP,pt:payPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:payPM[m]||{}})),g:Math.round(payG)},
     wit:{pp:witP,pt:witPT,pm:MESES_ORDER.filter(m=>MM[m]).map(m=>({mes:m.substring(0,3),v:witPM[m]||{}})),g:Math.round(witG)}
   };
@@ -368,6 +412,25 @@ function processData(rows,forecast){
 function persLegend(pp,pt,g){if(!pp.length)return'<p style="color:var(--text-3);font-size:13px;padding:16px">Sin datos identificados.</p>';return'<div class="person-grid">'+pp.map((p,i)=>{const t=pt[p]||0;const pct=g>0?((t/g)*100).toFixed(1):0;return`<div class="person-card"><span class="person-dot" style="background:${PC[i%PC.length]}"></span><div><div class="person-name">${p}</div><div class="person-total">${fmt(t)}</div><div class="person-pct">${pct}%</div></div></div>`;}).join('')+'</div>';}
 
 function semBar(pct){const v=parseFloat(pct);const c=v>65?'#e04545':v>50?'#e08a45':'#3dbb7d';const tc=v>65?'#f08080':v>50?'#e0b070':'#6ddba0';return`<div class="sem"><div class="sem-bar"><div class="sem-fill" style="width:${Math.min(v,100).toFixed(1)}%;background:${c}"></div></div><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${tc}">${v.toFixed(0)}%</span></div>`;}
+
+function renderCaja(p){
+  const cfg=p.caja!==null;
+  const card=(label,val,col,sub)=>`<div class="mrr-card"><div class="kpi-label">${label}</div><div class="kpi-value" style="color:${col};font-size:26px">${val}</div><div style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.5">${sub}</div></div>`;
+  let h=`<div class="section-title"><h2>Caja y cierre de ${p.cur.mes}</h2><div class="line"></div></div><div class="mrr-grid">`;
+  h+=card('Caja hoy',cfg?fmt(p.caja):'—','var(--text-1)',cfg?(p.fechaCaja?'Saldo al '+fmtD(pDate(p.fechaCaja)):'Saldo cargado en CONFIG'):'Cargá el saldo en CONFIG, celda I2');
+  h+=card('Cobros pendientes',fmt(p.cobrosPend),'var(--green)',`${p.cobros.filter(c=>c.pendiente>0).length} clientes recurrentes que aún no pagan este mes`);
+  h+=card('Egresos pendientes',fmt(p.egresosPend),'var(--red)',p.egPendCfg?'Cargado en CONFIG':`Estimado: gasto típico mensual (${fmt(p.gastosMed)}) menos lo ya registrado`);
+  h+=card('Caja proyectada al cierre',cfg?fmt(p.cajaProy):'—',cfg?(p.cajaProy>=0?'var(--accent)':'var(--red)'):'var(--text-3)',cfg?'Caja hoy + cobros pendientes − egresos pendientes':'Necesita el saldo de caja');
+  h+=`</div>`;
+  const rows=p.cobros.filter(c=>c.esperado>0);
+  if(rows.length){
+    h+=`<div class="chart-card"><div class="chart-sub">Cobros recurrentes esperados en ${p.cur.mes}: mediana de lo pagado por cada cliente en los últimos 3 meses cerrados</div><table class="pnl-t">
+      <tr class="pnl-div"><td>Cliente</td><td class="pv">Esperado</td><td class="pv">Cobrado</td><td class="pv">Pendiente</td></tr>`;
+    rows.forEach(c=>{h+=`<tr><td class="pl">${c.name}</td><td class="pv" style="color:var(--text-2)">${fmt(c.esperado)}</td><td class="pv" style="color:var(--text-2)">${c.cobrado?fmt(c.cobrado):'—'}</td><td class="pv" style="color:${c.pendiente>0?'var(--green)':'var(--text-3)'}">${c.pendiente>0?fmt(c.pendiente):'cobrado'}</td></tr>`;});
+    h+=`<tr class="pnl-tot"><td class="pl" style="color:var(--green)">TOTAL</td><td class="pv">${fmt(p.baseRec)}</td><td class="pv">${fmt(p.baseRec-p.cobrosPend)}</td><td class="pv" style="color:var(--green)">${fmt(p.cobrosPend)}</td></tr></table></div>`;
+  }
+  return h;
+}
 
 function render(data){
   const d=data.t;const now=new Date();
@@ -390,14 +453,14 @@ function render(data){
     </div>
   </div>`;
 
-  data.alerts.forEach(a=>{h+=`<div class="alert-banner ${a.t}"><div class="alert-dot ${a.t}"></div><span>${a.m}</span></div>`;});
+  if(SHOW_ALERTS)data.alerts.forEach(a=>{h+=`<div class="alert-banner ${a.t}"><div class="alert-dot ${a.t}"></div><span>${a.m}</span></div>`;});
 
   // KPIs principales
   h+=`<div class="kpi-grid">
-    <div class="kpi kpi-g"><div class="kpi-label">Ingresos YTD</div><div class="kpi-value" style="color:var(--green)">${fmt(d.i)}</div><div class="kpi-sub">${fu(d.i/USD_RATE)} · ${d.mCon} meses</div></div>
+    <div class="kpi kpi-g"><div class="kpi-label">Ingresos YTD</div><div class="kpi-value" style="color:var(--green)">${fmt(d.i)}</div><div class="kpi-sub">${fu(d.i/USD_RATE)} · hasta ${d.hastaMes}</div></div>
     <div class="kpi kpi-r"><div class="kpi-label">Gastos Operativos YTD</div><div class="kpi-value" style="color:var(--red)">${fmt(d.gOp)}</div><div class="kpi-sub"><span class="badge ${parseFloat(d.rGOp)<60?'ba':'br'}">${d.rGOp}% ingresos</span></div></div>
     <div class="kpi kpi-a"><div class="kpi-label">Profit Operativo YTD</div><div class="kpi-value" style="color:${pCol}">${fmt(d.pOp)}</div><div class="kpi-sub"><span class="badge ${d.pOp>=0?'bg':'br'}">Margen ${d.margen}%</span></div></div>
-    <div class="kpi kpi-a"><div class="kpi-label">Resultado Neto YTD</div><div class="kpi-value" style="color:${ntCol}">${fmt(d.rNeto)}</div><div class="kpi-sub">Retenido tras retiros: <span style="color:${d.retenido>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">${fmt(d.retenido)}</span></div></div>
+    <div class="kpi kpi-a"><div class="kpi-label">Resultado Neto YTD</div><div class="kpi-value" style="color:${ntCol}">${fmt(d.rNeto)}</div><div class="kpi-sub">Retenido del año: <span style="color:${d.retenido>=0?'var(--green)':'var(--red)'};font-family:'JetBrains Mono',monospace">${fmt(d.retenido)}</span></div></div>
   </div>`;
 
   // MRR / Recurrente / Nómina %
@@ -428,6 +491,7 @@ function render(data){
     </div>
   </div>`;
 
+  h+=renderCaja(data.proj);
   // P&L
   h+=`<div class="section-title"><h2>Estado de Resultados</h2><span class="badge bx" style="margin-left:4px">P&amp;L</span><div class="line"></div></div>
   <div class="two-col">
@@ -456,9 +520,10 @@ function render(data){
         <tr class="pnl-tot"><td class="pl" style="color:var(--accent-light)">RESULTADO NETO</td><td class="pv" style="color:${ntCol};font-size:15px">${fmt(d.rNeto)}</td></tr>
         <tr class="pnl-div"><td colspan="2">Distribuciones</td></tr>
         <tr><td class="pl">Retiros de socios</td><td class="pv" style="color:var(--purple)">(${fmt(d.ret)})</td></tr>
-        <tr class="pnl-tot"><td class="pl" style="color:var(--text-1)">RETENIDO EN LA EMPRESA</td><td class="pv" style="color:${d.retenido>=0?'var(--green)':'var(--red)'};font-size:15px">${fmt(d.retenido)}</td></tr>
+        <tr class="pnl-tot"><td class="pl" style="color:var(--text-1)">RESULTADO RETENIDO ${new Date().getFullYear()}</td><td class="pv" style="color:${d.retenido>=0?'var(--green)':'var(--red)'};font-size:15px">${fmt(d.retenido)}</td></tr>
       </table>
-      ${d.retenido<0?`<div style="font-size:11px;color:var(--red);margin-top:8px">Los retiros superaron el resultado neto del año por ${fmt(-d.retenido)}.</div>`:''}
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.5">Lo que dejó en la empresa el resultado del año, después de impuestos y retiros. No es el saldo de caja: la caja también depende del saldo con el que arrancó el año, de lo que se cobra y paga fuera del mes y de los traspasos a la caja de ganancias.</div>
+      ${d.retenido<0?`<div style="font-size:11px;color:var(--red);margin-top:6px">Los retiros superaron el resultado neto del año por ${fmt(-d.retenido)}.</div>`:''}
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="font-size:10px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Distribución del ingreso total</div>
         ${[[d.gOp,'Gastos Operativos','var(--red)'],[d.imp,'Impuestos','var(--orange)'],[d.ret,'Retiros Socios','var(--purple)'],[d.retenido,'Retenido','var(--green)']].map(([v,label,color])=>{const p=d.i>0?(v/d.i*100).toFixed(0):0;if(v<0)color='var(--red)';return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><div style="font-size:12px;color:var(--text-2);width:160px">${label}</div><div style="flex:1;height:5px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${Math.max(0,Math.min(p,100))}%;height:100%;background:${color};border-radius:3px"></div></div><div style="font-size:11px;color:var(--text-3);font-family:'JetBrains Mono',monospace;width:28px;text-align:right">${p}%</div></div>`;}).join('')}
@@ -471,10 +536,10 @@ function render(data){
   <div class="chart-card"><canvas id="barChart" height="140"></canvas></div>
   <div class="section-title"><h2>MRR vs One-Shot por Mes</h2><span class="badge bx" style="margin-left:4px">NUEVO</span><div class="line"></div></div>
   <div class="chart-card"><div class="chart-sub">Recurrente = base garantizada · One-Shot = adquisición y proyectos nuevos</div><canvas id="mrrChart" height="110"></canvas></div>
-  <div class="section-title"><h2>Profit Operativo + Forecast</h2><div class="line"></div></div>
-  <div class="chart-card"><div class="chart-sub">* Mes en curso: datos parciales (punto hueco, línea punteada)</div><canvas id="profitChart" height="100"></canvas></div>
+  <div class="section-title"><h2>Profit Operativo + Proyección</h2><div class="line"></div></div>
+  <div class="chart-card"><div class="chart-sub">Línea punteada: mes en curso proyectado con los cobros recurrentes pendientes, y meses siguientes con la base recurrente actual (${fmt(data.proj.baseRec)}) menos el gasto típico (${fmt(data.proj.gastosMed)})</div><canvas id="profitChart" height="100"></canvas></div>
   <div class="section-title"><h2>% Nómina sobre Ingresos</h2><span class="badge br" style="margin-left:4px">SEMÁFORO</span><div class="line"></div></div>
-  <div class="chart-card"><div class="chart-sub">Verde &lt;50% · Ámbar 50–65% · Rojo &gt;65% · Target: mantener bajo el 50%</div><canvas id="nomRatioChart" height="90"></canvas></div>`;
+  <div class="chart-card"><div class="chart-sub">Verde &lt;50% · Ámbar 50–65% · Rojo &gt;65% · Target: mantener bajo el 50%${d.preCorte?` · ${d.curMes} se muestra a partir del día ${CUTOFF_DAY}`:''}</div><canvas id="nomRatioChart" height="90"></canvas></div>`;
 
   // Payroll
   h+=`<div class="section-title"><h2>Nómina por Persona</h2><div class="line"></div></div>
@@ -486,7 +551,7 @@ function render(data){
     <canvas id="payrollChart" height="110"></canvas>
     <div id="payrollLegend" style="margin-top:14px"></div>
   </div>
-  ${renderAudit(data.audit)}
+  ${SHOW_AUDIT?renderAudit(data.audit):''}
   <div class="section-title"><h2>Retiros de Socios</h2><div class="line"></div></div>
   <div class="chart-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -518,7 +583,7 @@ function render(data){
     <div class="health-card"><div class="health-label">Concentración de Clientes</div><div class="health-value" style="color:${topP>40?'var(--orange)':topP>30?'var(--accent)':'var(--green)'}">${d.topCliPct}%</div><div class="health-desc">${d.topCli.name} · ${topP>40?'riesgo alto':'riesgo moderado'}</div></div>
     <div class="health-card"><div class="health-label">Retiros vs Profit Op.</div><div class="health-value" style="color:${d.ret>d.pOp?'var(--red)':'var(--green)'}">${d.pOp>0?(d.ret/d.pOp*100).toFixed(0):0}%</div><div class="health-desc">${d.ret>d.pOp?'⚠ Retiros > profit':'En línea con profit'}</div></div>
     <div class="health-card"><div class="health-label">% Ingresos Recurrentes</div><div class="health-value" style="color:${parseFloat(d.pctRec)>50?'var(--green)':parseFloat(d.pctRec)>30?'var(--accent)':'var(--red)'}">${d.pctRec}%</div><div class="health-desc">Meta: &gt;60% para predecibilidad</div></div>
-    <div class="health-card"><div class="health-label">Meses Registrados</div><div class="health-value" style="color:var(--text-1)">${d.mCon} / 12</div><div class="health-desc">Q${d.curQ} en curso</div></div>
+    <div class="health-card"><div class="health-label">Meses Registrados</div><div class="health-value" style="color:var(--text-1)">${d.mCon} / 12</div><div class="health-desc">Acumulado hasta ${d.hastaMes}</div></div>
   </div>
   <div class="footer"><p>Trichter Consulting · Dashboard Financiero 2026 · Datos desde Google Sheets · Auto-refresh 5min</p></div>`;
 
@@ -528,16 +593,31 @@ function render(data){
   Chart.defaults.color='#5a5348';Chart.defaults.borderColor='#1f1d1a33';Chart.defaults.font.family="'JetBrains Mono',monospace";Chart.defaults.font.size=11;
   const bL=data.monthly.map(m=>m.isP?m.mes+'*':m.mes);
 
-  new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Ingresos',data:data.monthly.map(m=>m.i),backgroundColor:data.monthly.map(m=>m.isP?'#3dbb7d55':'#3dbb7d'),borderRadius:5,barPercentage:0.75},{label:'Gastos Op.',data:data.monthly.map(m=>m.gOp),backgroundColor:data.monthly.map(m=>m.isP?'#e0454555':'#e04545'),borderRadius:5,barPercentage:0.75}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
+  const P=data.proj;const pendI=data.monthly.map(m=>m.isP?Math.round(P.cobrosPend):null),pendG=data.monthly.map(m=>m.isP?Math.round(P.egresosPend):null);
+  const tipFmt={callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}};
+  new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:bL,datasets:[
+    {label:'Ingresos',data:data.monthly.map(m=>m.i),backgroundColor:'#3dbb7d',borderRadius:5,barPercentage:0.75,stack:'i'},
+    {label:'Cobros pendientes',data:pendI,backgroundColor:'#3dbb7d40',borderColor:'#3dbb7d',borderWidth:1,borderDash:[4,3],borderRadius:5,barPercentage:0.75,stack:'i'},
+    {label:'Gastos Op.',data:data.monthly.map(m=>m.gOp),backgroundColor:'#e04545',borderRadius:5,barPercentage:0.75,stack:'g'},
+    {label:'Egresos pendientes',data:pendG,backgroundColor:'#e0454540',borderColor:'#e04545',borderWidth:1,borderRadius:5,barPercentage:0.75,stack:'g'}]},
+    options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}},tooltip:tipFmt},scales:{y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{stacked:true,grid:{display:false}}}}});
 
-  new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
+  new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'},{label:'Recurrente pendiente',data:pendI,backgroundColor:'#c59b3f40',borderColor:'#c59b3f',borderWidth:1,borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
 
-  const hasF=data.monthly.some(m=>m.fI);
-  const pDS=[{label:'Profit Operativo',data:data.monthly.map(m=>m.pOp),borderColor:'#c59b3f',backgroundColor:'#c59b3f18',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:data.monthly.map(m=>m.isP?'#111111':'#c59b3f'),borderWidth:3,segment:{borderDash:c=>data.monthly[c.p1DataIndex]?.isP?[6,4]:undefined}}];
-  if(hasF)pDS.push({label:'Forecast',data:data.monthly.map(m=>m.fI&&m.fG?m.fI-m.fG:null),borderColor:'#5a9fd4',fill:false,tension:0.3,borderDash:[6,4],pointRadius:4,borderWidth:2});
-  new Chart(document.getElementById('profitChart'),{type:'line',data:{labels:bL,datasets:pDS},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
+  // Profit: meses cerrados reales + mes en curso y siguientes proyectados
+  const pM=data.monthly,curI=pM.findIndex(m=>m.isP);
+  const pLab=bL.concat(P.next.map(x=>x.mes.substring(0,3)));
+  const realP=pM.map(m=>m.isP?null:m.pOp).concat(P.next.map(()=>null));
+  const projP=pM.map((m,i)=>m.isP?Math.round(P.cur.p):(i===curI-1?m.pOp:null)).concat(P.next.map(x=>Math.round(x.p)));
+  const pDS=[{label:'Profit Operativo',data:realP,borderColor:'#c59b3f',backgroundColor:'#c59b3f18',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#c59b3f',borderWidth:3,spanGaps:false},
+             {label:'Proyección',data:projP,borderColor:'#c59b3f',borderDash:[6,4],fill:false,tension:0.3,pointRadius:5,pointBackgroundColor:'#111111',pointBorderColor:'#c59b3f',borderWidth:2,spanGaps:false}];
+  const fcM=pM.map(m=>m.mesFull).concat(P.next.map(x=>x.mes));
+  const fcP=fcM.map(m=>{const f=(data.forecast||{})[m]||{};return f.ingProyectado&&f.gastoProyectado?f.ingProyectado-f.gastoProyectado:null;});
+  if(fcP.some(v=>v!==null))pDS.push({label:'Meta (hoja FORECAST)',data:fcP,borderColor:'#5a9fd4',fill:false,tension:0.3,borderDash:[2,4],pointRadius:3,borderWidth:1.5});
+  new Chart(document.getElementById('profitChart'),{type:'line',data:{labels:pLab,datasets:pDS},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}},tooltip:tipFmt},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
 
-  new Chart(document.getElementById('nomRatioChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Nómina / Ingresos %',data:data.monthly.map(m=>parseFloat(m.rNom.toFixed(1))),backgroundColor:data.monthly.map(m=>m.rNom>65?'#e04545':m.rNom>50?'#e08a45':'#3dbb7d'),borderRadius:5,barPercentage:0.65}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)}% de ingresos`}}},scales:{y:{min:0,suggestedMax:100,ticks:{callback:v=>v+'%'},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
+  const nM=data.monthly.filter(m=>!m.hideRatio);
+  new Chart(document.getElementById('nomRatioChart'),{type:'bar',data:{labels:nM.map(m=>m.isP?m.mes+'*':m.mes),datasets:[{label:'Nómina / Ingresos %',data:nM.map(m=>parseFloat(m.rNom.toFixed(1))),backgroundColor:nM.map(m=>m.rNom>65?'#e04545':m.rNom>50?'#e08a45':'#3dbb7d'),borderRadius:5,barPercentage:0.65}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)}% de ingresos`}}},scales:{y:{min:0,suggestedMax:100,ticks:{callback:v=>v+'%'},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});
 
   const pyL=data.pay.pm.map(m=>m.mes);const pyDS=data.pay.pp.map((p,i)=>({label:p,data:data.pay.pm.map(m=>Math.round(m.v[p]||0)),backgroundColor:PC[i%PC.length],borderRadius:4}));
   new Chart(document.getElementById('payrollChart'),{type:'bar',data:{labels:pyL,datasets:pyDS.length?pyDS:[{label:'Sin datos',data:pyL.map(()=>0),backgroundColor:'#333'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:11},boxWidth:10,padding:12}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
@@ -558,11 +638,17 @@ function render(data){
 async function loadDashboard(){
   document.getElementById('app').innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>';
   try{
-    const[rows,fRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST')]);
+    const[rows,fRows,cRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST'),fetchSheet('CONFIG','I1:K2').catch(()=>[])]);
+    // CONFIG!I1:K2 → Caja actual (MXN) | Fecha de la caja | Egresos pendientes del mes (MXN)
+    const config={};const c0=cRows[0]||{};
+    Object.entries(c0).forEach(([k,v])=>{const kk=sa(k).toLowerCase();if(v===''||v===null)return;
+      if(kk.includes('caja actual'))config.caja=typeof v==='number'?v:pm(v);
+      else if(kk.includes('fecha'))config.fecha=v;
+      else if(kk.includes('egresos pendientes'))config.egresosPend=typeof v==='number'?v:pm(v);});
     const valid=rows.filter(r=>r.Tipo);
     const forecast={};
     fRows.forEach(r=>{const mes=(r.Mes||'').trim();const c=(r.Concepto||'').trim();if(!mes)return;if(!forecast[mes])forecast[mes]={};const p=typeof r.Proyectado==='number'?r.Proyectado:pm(r.Proyectado);if(c==='Total Ingresos')forecast[mes].ingProyectado=p;if(c==='Total Gastos')forecast[mes].gastoProyectado=p;});
-    render(processData(valid,forecast));
+    render(processData(valid,forecast,config));
   }catch(err){document.getElementById('app').innerHTML=`<div class="loading"><p style="color:var(--red);font-size:16px;margin-bottom:12px">Error cargando datos</p><p style="color:var(--text-2);font-size:13px">${err.message}</p><button class="btn btn-accent" style="margin-top:20px" onclick="loadDashboard()">Reintentar</button></div>`;}
 }
 loadDashboard();
