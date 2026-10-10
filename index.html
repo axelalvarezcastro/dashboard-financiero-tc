@@ -104,7 +104,8 @@
 <script>
 const SPREADSHEET_ID='1wI5pQfW_rGrwoH56DpdBaiIavHNSdNgwreOCIsJyTWs';
 const SHEET_NAME='REGISTRO';
-const USD_RATE=16.5;
+// Tipo de cambio de respaldo; el dashboard usa el de CONFIG!M2 cuando está cargado
+let USD_RATE=18.3;
 const MESES_ORDER=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const COLORS=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a'];
 const PC=['#c59b3f','#5a9fd4','#9b7fd4','#3dbb7d','#e08a45','#7eb89e','#d46a5a','#8a7060','#6a8db6','#b69b6a','#d4af5a','#9fb87e'];
@@ -365,6 +366,8 @@ function processData(rows,forecast,config,ventas,previstos){
   previstos.forEach(p=>{
     const cli=String(p.Cliente||'').trim();const i0=MESES_ORDER.indexOf(String(p['Mes inicio']||'').trim());
     if(!cli||i0<0)return;
+    // Solo filas del año en curso (Año vacío = año en curso)
+    const anio=parseInt(p['Año']||p['Ano']||'',10)||now.getFullYear();if(anio!==now.getFullYear())return;
     const k=canonCli(cliKey(cli)),rec=/^s/i.test(sa(String(p.Recurrente||'')).trim());
     if(rec&&enMotor.has(k))return;
     let monto=pm(p.Monto);if(sa(String(p.Moneda||'')).toUpperCase().includes('USD'))monto*=tc;
@@ -416,6 +419,22 @@ function processData(rows,forecast,config,ventas,previstos){
     caja,fechaCaja:config.fecha||null,cajaProy:caja!==null?caja+cobrosPend+ventasProb-egresosPend:null
   };
   proj.cur.p=proj.cur.i-proj.cur.g;proj.next.forEach(x=>{x.p=x.i-x.g;});
+  // ---- Proyección a fin de año: meses cerrados reales + mes en curso y siguientes proyectados ----
+  // Caja: parte de la caja proyectada al cierre del mes en curso y suma el profit de cada mes
+  // siguiente, menos los retiros mensuales previstos (CONFIG). No incluye impuestos ni pagos de tarjeta.
+  const retMes=typeof config.retiros==='number'?config.retiros:0;
+  const cajaGan=typeof config.cajaGan==='number'?config.cajaGan:null;
+  const cerrados=MESES_ORDER.slice(0,curIdx).filter(m=>MM[m]);
+  const real={i:0,g:0,ret:0};cerrados.forEach(m=>{real.i+=MM[m].i;real.g+=MM[m].gOp;real.ret+=MM[m].ret;});real.p=real.i-real.g;
+  const filas=[{mes:curMes,i:proj.cur.i,g:proj.cur.g,p:proj.cur.p,ret:Math.max(0,retMes-(MM[curMes]?.ret||0)),parcial:true}]
+    .concat(proj.next.map(x=>({mes:x.mes,i:x.i,g:x.g,p:x.p,ret:retMes})));
+  let cj=null;
+  filas.forEach((f,ix)=>{if(proj.cajaProy===null){f.caja=null;return;}cj=ix===0?proj.cajaProy-f.ret:cj+f.p-f.ret;f.caja=cj;});
+  const fy={real,cerrados,filas,retMes,cajaGan,
+    totI:real.i+filas.reduce((s,f)=>s+f.i,0),totP:real.p+filas.reduce((s,f)=>s+f.p,0),
+    totRet:real.ret+filas.reduce((s,f)=>s+f.ret,0),cajaFin:cj};
+  fy.ahorroFin=fy.cajaFin!==null?fy.cajaFin+(cajaGan||0):null;
+  proj.fy=fy;
 
   const alerts=[];
   const cd=MM[curMes];
@@ -461,6 +480,25 @@ function processData(rows,forecast,config,ventas,previstos){
 function persLegend(pp,pt,g){if(!pp.length)return'<p style="color:var(--text-3);font-size:13px;padding:16px">Sin datos identificados.</p>';return'<div class="person-grid">'+pp.map((p,i)=>{const t=pt[p]||0;const pct=g>0?((t/g)*100).toFixed(1):0;return`<div class="person-card"><span class="person-dot" style="background:${PC[i%PC.length]}"></span><div><div class="person-name">${p}</div><div class="person-total">${fmt(t)}</div><div class="person-pct">${pct}%</div></div></div>`;}).join('')+'</div>';}
 
 function semBar(pct){const v=parseFloat(pct);const c=v>65?'#e04545':v>50?'#e08a45':'#3dbb7d';const tc=v>65?'#f08080':v>50?'#e0b070':'#6ddba0';return`<div class="sem"><div class="sem-bar"><div class="sem-fill" style="width:${Math.min(v,100).toFixed(1)}%;background:${c}"></div></div><span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${tc}">${v.toFixed(0)}%</span></div>`;}
+
+function renderFY(p){
+  const f=p.fy,anio=new Date().getFullYear();
+  const card=(label,val,col,sub)=>`<div class="mrr-card"><div class="kpi-label">${label}</div><div class="kpi-value" style="color:${col};font-size:26px">${val}</div><div style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.5">${sub}</div></div>`;
+  const rango=f.cerrados.length?`${f.cerrados[0].substring(0,3)}–${f.cerrados[f.cerrados.length-1].substring(0,3)}`:'';
+  let h=`<div class="section-title"><h2>Proyección a fin de ${anio}</h2><div class="line"></div></div><div class="mrr-grid">`;
+  h+=card('Ingresos del año',fmt(f.totI),'var(--green)',`Real ${rango} ${fmt(f.real.i)} + proyectado ${fmt(f.totI-f.real.i)}`);
+  h+=card('Profit operativo del año',fmt(f.totP),f.totP>=0?'var(--accent)':'var(--red)',`Margen ${f.totI>0?(f.totP/f.totI*100).toFixed(1):0}% · real ${rango} ${fmt(f.real.p)}`);
+  h+=card('Caja operativa a fin de año',f.cajaFin!==null?fmt(f.cajaFin):'—',f.cajaFin===null?'var(--text-3)':f.cajaFin>=0?'var(--accent)':'var(--red)',f.cajaFin!==null?`Con retiros previstos de ${fmt(f.retMes)}/mes (CONFIG, celda N2)`:'Necesita el saldo de caja en CONFIG');
+  h+=card('Disponible total a fin de año',f.ahorroFin!==null&&f.cajaGan!==null?fmt(f.ahorroFin):'—',f.cajaGan!==null?'var(--accent-light)':'var(--text-3)',f.cajaGan!==null?`Caja operativa + caja de ganancias (${fmt(f.cajaGan)})`:'Cargá el saldo de la caja de ganancias en CONFIG, celda O2');
+  h+=`</div><div class="chart-card"><div class="chart-sub">Mes a mes hasta diciembre. Ingresos = base recurrente + ingresos previstos + ventas probables; gastos = gasto típico mensual. La caja no descuenta impuestos ni pagos de tarjeta fuera del gasto típico.</div>
+    <canvas id="fyChart" height="90"></canvas>
+    <table class="pnl-t" style="margin-top:16px">
+    <tr class="pnl-div"><td>Mes</td><td class="pv">Ingresos</td><td class="pv">Gastos</td><td class="pv">Profit</td><td class="pv">Retiros</td><td class="pv">Caja al cierre</td></tr>`;
+  if(f.cerrados.length)h+=`<tr><td class="pl" style="color:var(--text-2)">Real ${rango}</td><td class="pv" style="color:var(--text-2)">${fmt(f.real.i)}</td><td class="pv" style="color:var(--text-2)">${fmt(f.real.g)}</td><td class="pv" style="color:var(--text-2)">${fmt(f.real.p)}</td><td class="pv" style="color:var(--text-2)">${fmt(f.real.ret)}</td><td class="pv" style="color:var(--text-3)">—</td></tr>`;
+  f.filas.forEach(x=>{h+=`<tr><td class="pl">${x.mes}${x.parcial?' <span style="color:var(--text-3);font-size:10px">EN CURSO</span>':''}</td><td class="pv" style="color:var(--green)">${fmt(x.i)}</td><td class="pv" style="color:var(--red)">${fmt(x.g)}</td><td class="pv" style="color:${x.p>=0?'var(--accent)':'var(--red)'}">${fmt(x.p)}</td><td class="pv" style="color:var(--purple)">${x.ret?fmt(x.ret):'—'}</td><td class="pv" style="color:var(--text-1)">${x.caja!==null?fmt(x.caja):'—'}</td></tr>`;});
+  h+=`<tr class="pnl-tot"><td class="pl" style="color:var(--accent-light)">TOTAL ${anio}</td><td class="pv">${fmt(f.totI)}</td><td class="pv">${fmt(f.totI-f.totP)}</td><td class="pv" style="color:var(--accent)">${fmt(f.totP)}</td><td class="pv">${fmt(f.totRet)}</td><td class="pv" style="color:var(--accent)">${f.cajaFin!==null?fmt(f.cajaFin):'—'}</td></tr></table></div>`;
+  return h;
+}
 
 function renderCaja(p){
   const cfg=p.caja!==null;
@@ -561,6 +599,7 @@ function render(data){
   </div>`;
 
   h+=renderCaja(data.proj);
+  h+=renderFY(data.proj);
   // P&L
   h+=`<div class="section-title"><h2>Estado de Resultados</h2><span class="badge bx" style="margin-left:4px">P&amp;L</span><div class="line"></div></div>
   <div class="two-col">
@@ -674,6 +713,11 @@ function render(data){
 
   new Chart(document.getElementById('mrrChart'),{type:'bar',data:{labels:bL,datasets:[{label:'Recurrente (MRR)',data:data.monthly.map(m=>m.rec),backgroundColor:'#c59b3f',borderRadius:4,stack:'s'},{label:'One-Shot / Nuevo',data:data.monthly.map(m=>m.nvo),backgroundColor:'#5a9fd4',borderRadius:4,stack:'s'},{label:'Recurrente pendiente',data:pendI,backgroundColor:'#c59b3f40',borderColor:'#c59b3f',borderWidth:1,borderRadius:4,stack:'s'},{label:'Ventas probables',data:probV,backgroundColor:'#5a9fd440',borderColor:'#5a9fd4',borderWidth:1,borderRadius:4,stack:'s'}]},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}}}}});
 
+  {const F=P.fy;const fl=F.filas;
+   const ds=[{type:'bar',label:'Ingresos',data:fl.map(x=>Math.round(x.i)),backgroundColor:'#3dbb7d80',borderRadius:5,yAxisID:'y',order:2},
+             {type:'bar',label:'Gastos',data:fl.map(x=>Math.round(x.g)),backgroundColor:'#e0454580',borderRadius:5,yAxisID:'y',order:2}];
+   if(fl.some(x=>x.caja!==null))ds.push({type:'line',label:'Caja al cierre',data:fl.map(x=>x.caja===null?null:Math.round(x.caja)),borderColor:'#c59b3f',backgroundColor:'#c59b3f',borderWidth:3,pointRadius:5,tension:0.3,yAxisID:'y',order:1});
+   new Chart(document.getElementById('fyChart'),{data:{labels:fl.map(x=>x.mes.substring(0,3)+(x.parcial?'*':'')),datasets:ds},options:{responsive:true,plugins:{legend:{labels:{font:{family:"'Poppins'",size:12},boxWidth:12,padding:16}},tooltip:tipFmt},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'#1f1d1a22'}},x:{grid:{display:false}}}}});}
   // Profit: meses cerrados reales + mes en curso y siguientes proyectados
   const pM=data.monthly,curI=pM.findIndex(m=>m.isP);
   const pLab=bL.concat(P.next.map(x=>x.mes.substring(0,3)));
@@ -708,14 +752,16 @@ function render(data){
 async function loadDashboard(){
   document.getElementById('app').innerHTML='<div class="loading"><div class="spinner"></div><p>Cargando datos...</p></div>';
   try{
-    const[rows,fRows,cRows,vRows,pRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST'),fetchSheet('CONFIG','I1:M2').catch(()=>[]),fetchSheet('VENTAS').catch(()=>[]),fetchSheet('INGRESOS_PREVISTOS','A1:I60').catch(()=>[])]);
+    const[rows,fRows,cRows,vRows,pRows]=await Promise.all([fetchSheet(SHEET_NAME),fetchSheet('FORECAST'),fetchSheet('CONFIG','I1:O2').catch(()=>[]),fetchSheet('VENTAS').catch(()=>[]),fetchSheet('INGRESOS_PREVISTOS','A1:J60').catch(()=>[])]);
     // CONFIG!I1:L2 → Caja actual (MXN) | Fecha de la caja | Egresos pendientes del mes (MXN) | Probabilidad de cierre
     const config={};const c0=cRows[0]||{};
     Object.entries(c0).forEach(([k,v])=>{const kk=sa(k).toLowerCase();if(v===''||v===null)return;
       if(kk.includes('caja actual'))config.caja=typeof v==='number'?v:pm(v);
       else if(kk.includes('fecha'))config.fecha=v;
       else if(kk.includes('egresos pendientes'))config.egresosPend=typeof v==='number'?v:pm(v);
-      else if(kk.includes('tipo de cambio')){const n=typeof v==='number'?v:parseFloat(String(v).replace(',','.'));if(n>5)config.tc=n;}
+      else if(kk.includes('retiros')){const n=typeof v==='number'?v:pm(v);config.retiros=n;}
+      else if(kk.includes('caja de ganancias')){const n=typeof v==='number'?v:pm(v);config.cajaGan=n;}
+      else if(kk.includes('tipo de cambio')){const n=typeof v==='number'?v:parseFloat(String(v).replace(',','.'));if(n>5){config.tc=n;USD_RATE=n;}}
       else if(kk.includes('probabilidad')){const n=typeof v==='number'?v:pm(v);config.prob=n>1?n/100:n;}});
     const valid=rows.filter(r=>r.Tipo);
     const forecast={};
